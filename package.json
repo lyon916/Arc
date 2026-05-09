@@ -1,0 +1,55 @@
+{
+  "name": "arc",
+  "private": false,
+  "version": "1.0.0",
+  "description": "A modern, lightweight API testing client that runs entirely in your browser. No installation needed.",
+  "type": "module",
+  "homepage": "https://www.arcapi.xyz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lyon916/Arc.git"
+  },
+  "keywords": [
+    "api-client",
+    "rest-client",
+    "http-debugger",
+    "postman-alternative",
+    "api-testing",
+    "rest-api",
+    "developer-tools",
+    "react",
+    "typescript"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.2.4",
+    "dexie": "^4.4.2",
+    "lucide-react": "^1.14.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.20",
+    "daisyui": "^5.0.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0",
+    "vite": "^6.0.0"
+  }
+}

@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Environment
+.env
+.env.development
+.env.production
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.tsbuildinfo
+
+# Claude
+.claude/
+
+# Wrangler
+.wrangler/
+/node_modules

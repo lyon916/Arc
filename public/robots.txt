@@ -1,0 +1,6 @@
+# https://www.arcapi.xyz
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://www.arcapi.xyz/sitemap.xml

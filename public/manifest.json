@@ -1,0 +1,16 @@
+{
+  "name": "Arc",
+  "short_name": "Arc",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0d0f19",
+  "theme_color": "#5e6ad2",
+  "description": "Lightweight API Client — debug REST/HTTP requests in your browser",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

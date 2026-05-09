@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q98SJXWRKP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-Q98SJXWRKP');
+    </script>
+
+    <!-- Primary Meta -->
+    <title>Arc - Lightweight API Client | REST &amp; HTTP Debugger</title>
+    <meta name="description" content="Arc (API Request Console) is a modern, lightweight API testing tool. Debug REST/HTTP requests, manage environment variables, generate code snippets — all in your browser." />
+    <meta name="keywords" content="API client, REST client, HTTP debugger, API testing, browser API tool, Postman alternative, Arc" />
+    <meta name="author" content="Arc" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://www.arcapi.xyz" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Arc - Lightweight API Client" />
+    <meta property="og:description" content="A modern REST/HTTP API debugging tool with environment variables, code generation, and 17 themes. Runs entirely in your browser." />
+    <meta property="og:url" content="https://www.arcapi.xyz" />
+    <meta property="og:site_name" content="Arc" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:image" content="https://www.arcapi.xyz/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Arc - Lightweight API Client" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Arc - API Client" />
+    <meta name="twitter:description" content="Modern REST/HTTP API debugging tool with env vars, code gen, 17 themes." />
+    <meta name="twitter:image" content="https://www.arcapi.xyz/og-image.svg" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Arc - API Request Console",
+      "description": "Lightweight API testing tool. Debug REST/HTTP requests, manage environment variables, generate code snippets.",
+      "url": "https://www.arcapi.xyz",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
+    <!-- PWA / Web App -->
+    <meta name="theme-color" content="#5e6ad2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Arc" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!-- Redirect naked domain → www -->
+    <script>
+      if (location.hostname === 'arcapi.xyz') {
+        location.replace('https://www.arcapi.xyz' + location.pathname + location.search + location.hash)
+      }
+    </script>
+    <!-- Theme anti-flash -->
+    <script>
+      (function() {
+        var theme = localStorage.getItem('arc-theme') || localStorage.getItem('lightio-theme') || localStorage.getItem('spacelabs-theme')
+        if (!theme) {
+          theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'linear-dark'
+        }
+        document.documentElement.setAttribute('data-theme', theme)
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
