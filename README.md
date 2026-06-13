@@ -8,7 +8,7 @@
 
 **Arc** = **A**PI **R**equest **C**onsole. The browser-based API client that *actually works* — one-click CORS bypass, no install, no account, no server.
 
-> **Live demo:** [www.arcapi.xyz](https://www.arcapi.xyz) — open and start debugging immediately.
+> **Live demo:** [www.arcapi.xyz](https://arcapi.xyz) — open and start debugging immediately.
 
 [中文文档](./README_zh.md)
 

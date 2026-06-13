@@ -8,7 +8,7 @@
 
 **Arc** = **A**PI **R**equest **C**onsole。一款真正能用的浏览器端 API 客户端 — 一键绕过 CORS，无需安装，无需注册，无需后端。
 
-> **在线体验：**[www.arcapi.xyz](https://www.arcapi.xyz) — 打开即用。
+> **在线体验：**[www.arcapi.xyz](https://arcapi.xyz) — 打开即用。
 
 [English](./README.md)
 
