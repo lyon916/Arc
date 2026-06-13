@@ -6,24 +6,36 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6)](https://www.typescriptlang.org)
 [![Vite](https://img.shields.io/badge/Vite-6-646cff)](https://vitejs.dev)
 
-**Arc** = **A**PI **R**equest **C**onsole. A modern, lightweight API testing tool that runs entirely in your browser. No installation, no account, no server — just open and debug.
+**Arc** = **A**PI **R**equest **C**onsole. The browser-based API client that *actually works* — one-click CORS bypass, no install, no account, no server.
 
-> **Live demo:** [www.arcapi.xyz](https://www.arcapi.xyz)
+> **Live demo:** [www.arcapi.xyz](https://www.arcapi.xyz) — open and start debugging immediately.
+
+## Why Arc?
+
+Browser-based API tools all share one fatal flaw: **CORS**. You paste a URL, hit send, and get `blocked by CORS policy`. In Arc, you click the 🛡 shield icon and that's it — every request now routes through the built-in proxy and just works.
+
+| | Arc | Hoppscotch (browser) | Postman (web) |
+|---|---|---|---|
+| CORS bypass | ✅ One-click toggle | ❌ Needs browser extension | ❌ Desktop app only |
+| Proxy open-source | ✅ [80 lines, no logging](./worker/) | — | — |
+| Deploy your own proxy | ✅ Cloudflare Worker | — | — |
+| No install | ✅ | ✅ | ❌ App required |
+| Offline/local-first | ✅ IndexedDB | ✅ | ❌ Account required |
 
 ## Features
 
+- **🛡 Built-in CORS Proxy** — One-click toggle. Requests route through an open-source [Cloudflare Worker](./worker/) — no logging, no storage, deploy your own in 30 seconds.
 - **HTTP Request Builder** — GET / POST / PUT / DELETE / PATCH / HEAD / OPTIONS with Query Params, Headers, Body (JSON / FormData / Raw)
 - **Authentication** — Bearer Token and Basic Auth
-- **Environment Variables** — Create and manage multi-environment variables with `{{varname}}` syntax
+- **Environment Variables** — Multi-environment `{{varname}}` syntax with quick switching
 - **Collections** — Save and organize requests with folder grouping
-- **Request History** — Auto-saved history in local IndexedDB
+- **Request History** — Auto-saved to local IndexedDB, searchable and undo-able
 - **cURL Import** — Paste cURL commands to instantly populate a request
-- **Code Generation** — Export requests as JavaScript / TypeScript / cURL snippets
+- **Code Generation** — Export as JavaScript / TypeScript / cURL snippets
 - **17 Themes** — Linear Dark, Dracula, Nord, Catppuccin, Solarized, GitHub Light, and more
-- **Built-in CORS Proxy** — Toggle to route requests through the open-source [Cloudflare Worker proxy](./worker/) when blocked by CORS
-- **i18n** — English and Chinese (auto-detects browser language)
-- **Mobile Responsive** — Full-featured bottom-tab layout for mobile screens
-- **Keyboard Shortcuts** — `Ctrl+Enter` send, `Ctrl+S` save, `Cmd+L` focus URL bar, `Esc` cancel
+- **i18n** — English / Chinese (auto-detects browser language)
+- **Mobile Responsive** — Full-featured bottom-tab layout
+- **Keyboard Shortcuts** — `Ctrl+Enter` send, `Ctrl+S` save, `Ctrl+L` focus URL, `Esc` cancel
 
 ## Tech Stack
 
@@ -36,7 +48,7 @@
 | State | Zustand 5 |
 | Storage | Dexie 4 (IndexedDB) |
 | Icons | Lucide React |
-| Analytics | Google Analytics 4 |
+| Proxy | Cloudflare Workers |
 
 ## Quick Start
 
@@ -59,7 +71,7 @@ npm run preview
 
 ## Deployment
 
-Arc outputs static files — deploy to any static host:
+Arc outputs static files — deploy anywhere:
 
 ```bash
 npm run build
@@ -73,16 +85,18 @@ npm run build
 npx wrangler pages deploy dist --project-name=arcapi
 ```
 
-### CORS Proxy (optional)
+### CORS Proxy (recommended)
 
-When making cross-origin requests from the browser, toggle the 🛡 shield icon to route through the proxy. Deploy your own:
+Deploy your own proxy so users can trust it or customize it:
 
 ```bash
 cd worker
 npx wrangler deploy
 ```
 
-Add a CNAME record: `proxy.yourdomain.com` → `@`. Update `PROXY_URL` in `src/utils/fetch.ts` to match. See [worker/README.md](worker/README.md) for details.
+Then add a CNAME `proxy.yourdomain.com → @` in Cloudflare DNS, and update `PROXY_URL` in `src/utils/fetch.ts`. See [worker/README.md](worker/README.md) for details.
+
+> The default proxy (`proxy.arcapi.xyz`) is fully open-source — no logging, no persistence. But self-hosting gives you and your users full control.
 
 ## Project Structure
 
@@ -109,7 +123,7 @@ Arc/
 │   └── index.css          # 17-theme design system
 ├── worker/                # CORS proxy (Cloudflare Worker)
 │   ├── src/
-│   │   └── index.js       # Worker code — stateless, no logging
+│   │   └── index.js       # ~80 lines — stateless, no logging
 │   ├── wrangler.toml
 │   └── README.md
 ├── index.html
@@ -120,11 +134,12 @@ Arc/
 
 ## Data Privacy
 
-All data (request history, collections, environment variables) is stored **locally in your browser's IndexedDB**. Nothing is sent to any server. Clearing browser data will remove all stored requests.
+- **All user data** (history, collections, env vars) is stored locally in IndexedDB. Nothing leaves your browser.
+- **The proxy** does not log, store, or inspect requests. It is a pure TCP passthrough — verify it yourself in [worker/src/index.js](worker/src/index.js).
 
 ## Contributing
 
-Pull requests are welcome! For major changes, please open an issue first to discuss what you'd like to change.
+Pull requests welcome! For major changes, please open an issue first.
 
 ## License
 
