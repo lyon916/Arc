@@ -1,2 +1,1 @@
-# Redirect naked domain to www
-https://arcapi.xyz/* https://www.arcapi.xyz/:splat 301
+
