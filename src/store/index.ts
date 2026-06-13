@@ -108,6 +108,8 @@ const savedSidebarWidth = parseInt(localStorage.getItem('arc-sidebar-width') || 
 const savedAutoSave = (localStorage.getItem('arc-autosave') || localStorage.getItem('lightio-autosave') || localStorage.getItem('spacelabs-autosave')) !== 'false'
 const savedLang = (localStorage.getItem('arc-lang') || localStorage.getItem('lightio-lang') || localStorage.getItem('spacelabs-lang')) as Lang | null
 const initialLang: Lang = savedLang || (navigator.language.startsWith('zh') ? 'zh' : 'en')
+const savedUseProxy = localStorage.getItem('arc-use-proxy')
+const initialUseProxy = savedUseProxy === 'true'
 document.documentElement.setAttribute('data-theme', savedTheme)
 
 let sidebarSaveTimer: ReturnType<typeof setTimeout> | null = null
@@ -120,6 +122,7 @@ interface UiState {
   sidebarTab: 'history' | 'workspace'
   autoSave: boolean
   lang: Lang
+  useProxy: boolean
   historyVersion: number
   workspaceVersion: number
   setSidebarOpen: (open: boolean) => void
@@ -129,6 +132,7 @@ interface UiState {
   setSidebarTab: (tab: 'history' | 'workspace') => void
   setAutoSave: (on: boolean) => void
   setLang: (lang: Lang) => void
+  setUseProxy: (on: boolean) => void
   toast: ToastState | null
   bumpHistory: () => void
   bumpWorkspace: () => void
@@ -144,6 +148,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   sidebarTab: initialSidebarTab,
   autoSave: savedAutoSave,
   lang: initialLang,
+  useProxy: initialUseProxy,
   historyVersion: 0,
   workspaceVersion: 0,
   toast: null,
@@ -176,6 +181,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   setLang: (lang) => {
     localStorage.setItem('arc-lang', lang)
     set({ lang })
+  },
+  setUseProxy: (on) => {
+    localStorage.setItem('arc-use-proxy', String(on))
+    set({ useProxy: on })
   },
   bumpHistory: () => set((s) => ({ historyVersion: s.historyVersion + 1 })),
   bumpWorkspace: () => set((s) => ({ workspaceVersion: s.workspaceVersion + 1 })),

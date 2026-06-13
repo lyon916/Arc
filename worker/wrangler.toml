@@ -1,0 +1,14 @@
+name = "arc-proxy"
+main = "src/index.js"
+compatibility_date = "2025-06-13"
+
+# Set this via CLOUDFLARE_ACCOUNT_ID env var or uncomment below
+# account_id = "YOUR_ACCOUNT_ID"
+
+# Deploy to proxy.arcapi.xyz
+routes = [
+  { pattern = "proxy.arcapi.xyz", custom_domain = true }
+]
+
+[observability]
+enabled = true

@@ -4,7 +4,7 @@ import { executeSave } from '../../utils/executeSave'
 import { HTTP_METHODS } from '../../utils/shared'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Save, ChevronDown, Send } from 'lucide-react'
+import { Save, ChevronDown, Send, Shield } from 'lucide-react'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { t } from '../../i18n'
 
@@ -26,6 +26,8 @@ export function UrlBar() {
   const loading = useRequestStore((s) => s.loading)
   const autoSave = useUiStore((s) => s.autoSave)
   const setAutoSave = useUiStore((s) => s.setAutoSave)
+  const useProxy = useUiStore((s) => s.useProxy)
+  const setUseProxy = useUiStore((s) => s.setUseProxy)
   const showToast = useUiStore((s) => s.showToast)
   const lang = useUiStore((s) => s.lang)
   const tr = (key: string) => t[lang]?.[key] ?? key
@@ -154,6 +156,28 @@ export function UrlBar() {
       />
 
       {sendBtn}
+
+      <button
+        className={`btn-ghost-linear flex items-center justify-center ${useProxy ? 'ring-2' : ''}`}
+        style={{
+          flexShrink: 0,
+          width: isMobile ? 28 : 32,
+          height: isMobile ? 28 : 32,
+          padding: 0,
+          color: useProxy ? 'var(--accent-brand)' : 'var(--text-muted)',
+          borderRadius: 'var(--radius-md)',
+          transition: 'color var(--transition-normal)',
+        }}
+        onClick={() => {
+          const next = !useProxy
+          setUseProxy(next)
+          if (next) showToast(tr('proxyOn'), 'info')
+        }}
+        title={tr('useProxy')}
+      >
+        <Shield size={isMobile ? 14 : 16} />
+      </button>
+
       <div style={{ display: 'flex', flexShrink: 0 }}>
         <button
           className="btn-ghost-linear flex items-center gap-1"

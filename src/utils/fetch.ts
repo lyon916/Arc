@@ -2,6 +2,9 @@ import type { ApiRequest, ApiResponse, KeyValue } from '../types/api'
 import { buildAuthHeader } from './authHeaders'
 import { replaceEnvVars } from './envVars'
 import { saveHistory } from '../hooks/useHistory'
+import { useUiStore } from '../store'
+
+const PROXY_URL = 'https://proxy.arcapi.xyz'
 
 export async function sendRequest(request: ApiRequest, signal?: AbortSignal): Promise<ApiResponse> {
   // Env var replacement
@@ -50,7 +53,11 @@ export async function sendRequest(request: ApiRequest, signal?: AbortSignal): Pr
 
   const start = performance.now()
 
-  const res = await fetch(url, {
+  // Route through CORS proxy if enabled
+  const useProxy = useUiStore.getState().useProxy
+  const fetchUrl = useProxy ? `${PROXY_URL}/?url=${encodeURIComponent(url)}` : url
+
+  const res = await fetch(fetchUrl, {
     method: request.method,
     headers,
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : body,

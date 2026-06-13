@@ -20,6 +20,7 @@
 - **cURL Import** — Paste cURL commands to instantly populate a request
 - **Code Generation** — Export requests as JavaScript / TypeScript / cURL snippets
 - **17 Themes** — Linear Dark, Dracula, Nord, Catppuccin, Solarized, GitHub Light, and more
+- **Built-in CORS Proxy** — Toggle to route requests through the open-source [Cloudflare Worker proxy](./worker/) when blocked by CORS
 - **i18n** — English and Chinese (auto-detects browser language)
 - **Mobile Responsive** — Full-featured bottom-tab layout for mobile screens
 - **Keyboard Shortcuts** — `Ctrl+Enter` send, `Ctrl+S` save, `Cmd+L` focus URL bar, `Esc` cancel
@@ -72,6 +73,17 @@ npm run build
 npx wrangler pages deploy dist --project-name=arcapi
 ```
 
+### CORS Proxy (optional)
+
+When making cross-origin requests from the browser, toggle the 🛡 shield icon to route through the proxy. Deploy your own:
+
+```bash
+cd worker
+npx wrangler deploy
+```
+
+Add a CNAME record: `proxy.yourdomain.com` → `@`. Update `PROXY_URL` in `src/utils/fetch.ts` to match. See [worker/README.md](worker/README.md) for details.
+
 ## Project Structure
 
 ```
@@ -95,6 +107,11 @@ Arc/
 │   ├── App.tsx            # Root layout (desktop + mobile responsive)
 │   ├── main.tsx           # Entry point
 │   └── index.css          # 17-theme design system
+├── worker/                # CORS proxy (Cloudflare Worker)
+│   ├── src/
+│   │   └── index.js       # Worker code — stateless, no logging
+│   ├── wrangler.toml
+│   └── README.md
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
