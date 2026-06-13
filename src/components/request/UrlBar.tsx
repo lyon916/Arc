@@ -171,7 +171,7 @@ export function UrlBar() {
         onClick={() => {
           const next = !useProxy
           setUseProxy(next)
-          showToast(tr(next ? 'proxyOn' : 'proxyOff'), 'info')
+          showToast(tr(next ? 'proxyOn' : 'proxyOff'), 'info', undefined, 2000)
         }}
         title={tr('useProxy')}
       >
