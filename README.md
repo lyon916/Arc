@@ -10,6 +10,8 @@
 
 > **Live demo:** [www.arcapi.xyz](https://www.arcapi.xyz) — open and start debugging immediately.
 
+[中文文档](./README_zh.md)
+
 ## Why Arc?
 
 Browser-based API tools all share one fatal flaw: **CORS**. You paste a URL, hit send, and get `blocked by CORS policy`. In Arc, you click the 🛡 shield icon and that's it — every request now routes through the built-in proxy and just works.
