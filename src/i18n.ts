@@ -88,7 +88,8 @@ export const t: Record<Lang, Record<string, string>> = {
     import_: '导入',
     startHint: '点击上方按钮开始使用',
     useProxy: 'CORS 代理',
-    proxyOn: '代理已启用 — 请求将通过 proxy.arcapi.xyz 转发',
+    proxyOn: '代理已启用',
+    proxyOff: '代理已关闭',
   },
   en: {
     appName: 'Arc',
@@ -177,7 +178,8 @@ export const t: Record<Lang, Record<string, string>> = {
     import_: 'Import',
     startHint: 'Click above to start',
     useProxy: 'CORS Proxy',
-    proxyOn: 'Proxy enabled — requests routed through proxy.arcapi.xyz',
+    proxyOn: 'Proxy enabled',
+    proxyOff: 'Proxy disabled',
   },
 }
 
