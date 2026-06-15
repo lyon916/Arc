@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Maximize2, Minimize2 } from 'lucide-react'
 import { useRequestStore, useUiStore } from '../../store'
@@ -10,6 +10,11 @@ type ViewMode = 'pretty' | 'raw' | 'headers'
 
 function formatDuration(ms: number): string {
   if (ms >= 1000) return `${(ms / 1000).toFixed(ms >= 10000 ? 0 : 1)}s`
+  return `${ms}ms`
+}
+
+function formatElapsed(ms: number): string {
+  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`
   return `${ms}ms`
 }
 
@@ -30,6 +35,24 @@ export function ResponsePanel() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const lang = useUiStore((s) => s.lang)
   const tr = (key: string) => t[lang]?.[key] ?? key
+
+  // 流式返回计时
+  const streamStartRef = useRef<number | null>(null)
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    if (streamingBody !== null) {
+      if (streamStartRef.current === null) {
+        streamStartRef.current = Date.now()
+      }
+      const timer = setInterval(() => {
+        setElapsed(Date.now() - streamStartRef.current!)
+      }, 80)
+      return () => clearInterval(timer)
+    } else {
+      streamStartRef.current = null
+      setElapsed(0)
+    }
+  }, [streamingBody])
 
   const LARGE_BODY_THRESHOLD = 500 * 1024 // 500KB
   const isLargeBody = response && response.size > LARGE_BODY_THRESHOLD
@@ -66,6 +89,9 @@ export function ResponsePanel() {
             <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="48 24" strokeLinecap="round" />
           </svg>
           <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Streaming…</span>
+          <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>
+            {formatElapsed(elapsed)}
+          </span>
           <span style={{ color: 'var(--text-tertiary)', fontSize: 11, marginLeft: 'auto' }}>
             {formatSize(new Blob([streamingBody]).size)}
           </span>
@@ -207,6 +233,7 @@ export function ResponsePanel() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-3">
+        <div key={viewMode} className="animate-fade-in">
         {viewMode === 'pretty' && (
           parsedJson !== null ? (
             <JsonTreeView data={parsedJson} />
@@ -238,6 +265,7 @@ export function ResponsePanel() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </>
   )

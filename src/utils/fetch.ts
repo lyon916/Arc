@@ -2,7 +2,7 @@ import type { ApiRequest, ApiResponse, KeyValue } from '../types/api'
 import { buildAuthHeader } from './authHeaders'
 import { replaceEnvVars } from './envVars'
 import { saveHistory } from '../hooks/useHistory'
-import { useUiStore } from '../store'
+import { useRequestStore, useUiStore } from '../store'
 
 const PROXY_URL = 'https://proxy.arcapi.xyz'
 

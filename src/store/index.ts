@@ -7,6 +7,12 @@ const defaultHeaders: KeyValue[] = [
   { key: 'Content-Type', value: 'application/json', enabled: true },
 ]
 
+// 响应缓存：切换 API 后再切回来时保留响应内容
+function cacheKey(req: ApiRequest): string {
+  return `${req.method} ${req.url}`
+}
+const responseCache = new Map<string, { response: ApiResponse | null; streamingBody: string | null }>()
+
 interface RequestState {
   request: ApiRequest
   response: ApiResponse | null
@@ -51,16 +57,33 @@ export const useRequestStore = create<RequestState>((set) => ({
   setAuthToken: (token) => set((s) => ({ request: { ...s.request, authToken: token } })),
   setAuthUser: (user) => set((s) => ({ request: { ...s.request, authUser: user } })),
   setAuthPass: (pass) => set((s) => ({ request: { ...s.request, authPass: pass } })),
-  loadRequest: (req) => set({ request: req, response: null, error: null }),
+  loadRequest: (req) => {
+    const key = cacheKey(req)
+    const cached = responseCache.get(key)
+    set({ request: req, response: cached?.response ?? null, streamingBody: cached?.streamingBody ?? null, error: null })
+  },
   resetRequest: () => set({
     request: { ...defaultRequest, headers: defaultHeaders },
     response: null,
     error: null,
   }),
-  setResponse: (response) => set({ response }),
+  setResponse: (response) => {
+    const req = useRequestStore.getState().request
+    if (response) {
+      responseCache.set(cacheKey(req), { response, streamingBody: null })
+    }
+    set({ response })
+  },
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
-  setStreamingBody: (body) => set({ streamingBody: body }),
+  setStreamingBody: (body) => {
+    const req = useRequestStore.getState().request
+    if (body !== null) {
+      const existing = responseCache.get(cacheKey(req))
+      responseCache.set(cacheKey(req), { response: existing?.response ?? null, streamingBody: body })
+    }
+    set({ streamingBody: body })
+  },
 }))
 
 type ToastType = 'success' | 'error' | 'info'
