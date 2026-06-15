@@ -12,6 +12,7 @@ interface RequestState {
   response: ApiResponse | null
   loading: boolean
   error: string | null
+  streamingBody: string | null
   setMethod: (method: HttpMethod) => void
   setUrl: (url: string) => void
   setHeaders: (headers: KeyValue[]) => void
@@ -29,6 +30,7 @@ interface RequestState {
   setResponse: (response: ApiResponse | null) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
+  setStreamingBody: (body: string | null) => void
 }
 
 export const useRequestStore = create<RequestState>((set) => ({
@@ -36,6 +38,7 @@ export const useRequestStore = create<RequestState>((set) => ({
   response: null,
   loading: false,
   error: null,
+  streamingBody: null,
   setMethod: (method) => set((s) => ({ request: { ...s.request, method } })),
   setUrl: (url) => set((s) => ({ request: { ...s.request, url } })),
   setHeaders: (headers) => set((s) => ({ request: { ...s.request, headers } })),
@@ -57,6 +60,7 @@ export const useRequestStore = create<RequestState>((set) => ({
   setResponse: (response) => set({ response }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  setStreamingBody: (body) => set({ streamingBody: body }),
 }))
 
 type ToastType = 'success' | 'error' | 'info'

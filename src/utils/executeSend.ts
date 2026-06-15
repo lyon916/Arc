@@ -13,7 +13,7 @@ export function cancelSend(): void {
 }
 
 export async function executeSend(): Promise<void> {
-  const { request, loading, setLoading, setResponse, setError } = useRequestStore.getState()
+  const { request, loading, setLoading, setResponse, setError, setStreamingBody } = useRequestStore.getState()
   const { bumpHistory, autoSave, lang } = useUiStore.getState()
   const tr = (key: string) => t[lang]?.[key] ?? key
 
@@ -25,6 +25,7 @@ export async function executeSend(): Promise<void> {
   setLoading(true)
   setError(null)
   setResponse(null)
+  setStreamingBody(null)
   try {
     const response = await sendRequest(request, currentController.signal)
     setResponse(response)

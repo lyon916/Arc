@@ -23,6 +23,7 @@ export function ResponsePanel() {
   const response = useRequestStore((s) => s.response)
   const error = useRequestStore((s) => s.error)
   const loading = useRequestStore((s) => s.loading)
+  const streamingBody = useRequestStore((s) => s.streamingBody)
   const showToast = useUiStore((s) => s.showToast)
   const [viewMode, setViewMode] = useState<ViewMode>('pretty')
   const [showFullBody, setShowFullBody] = useState(false)
@@ -36,7 +37,7 @@ export function ResponsePanel() {
     ? response!.body.slice(0, LARGE_BODY_THRESHOLD) + '\n\n… 响应体过大，已截断显示'
     : response?.body || ''
 
-  if (loading) {
+  if (loading && !streamingBody) {
     return (
       <div className="flex items-center justify-center h-full animate-fade-in">
         <svg width="32" height="32" viewBox="0 0 32 32" className="animate-spin" style={{ color: 'var(--accent-brand)' }}>
@@ -49,6 +50,34 @@ export function ResponsePanel() {
             strokeLinecap="round"
           />
         </svg>
+      </div>
+    )
+  }
+
+  // When SSE is streaming, render the live body with a small indicator.
+  if (loading && streamingBody !== null) {
+    return (
+      <div className="flex flex-col h-full" style={{ background: 'var(--bg-canvas)', paddingRight: 12 }}>
+        <div
+          className="flex items-center pl-3 flex-shrink-0"
+          style={{ borderBottom: '1px solid var(--border-subtle)', gap: 8, padding: '8px 12px' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 32 32" className="animate-spin" style={{ color: 'var(--accent-brand)', flexShrink: 0 }}>
+            <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="48 24" strokeLinecap="round" />
+          </svg>
+          <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Streaming…</span>
+          <span style={{ color: 'var(--text-tertiary)', fontSize: 11, marginLeft: 'auto' }}>
+            {formatSize(new Blob([streamingBody]).size)}
+          </span>
+        </div>
+        <div className="flex-1 overflow-auto p-3">
+          <pre
+            className="code-block p-3 whitespace-pre-wrap"
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}
+          >
+            {streamingBody}
+          </pre>
+        </div>
       </div>
     )
   }

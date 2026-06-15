@@ -65,12 +65,42 @@ export async function sendRequest(request: ApiRequest, signal?: AbortSignal): Pr
   })
 
   const duration = Math.round(performance.now() - start)
-  const responseBody = await res.text()
-
   const responseHeaders: Record<string, string> = {}
   res.headers.forEach((value, key) => {
     responseHeaders[key] = value
   })
+
+  // SSE / long-lived streaming responses: read incrementally so the UI
+  // can render progress as chunks arrive instead of waiting for the
+  // connection to close.
+  const contentType = (responseHeaders['content-type'] || '').toLowerCase()
+  const isEventStream = contentType.includes('text/event-stream')
+  const updateStreamingBody = useRequestStore.getState().setStreamingBody
+
+  let responseBody: string
+  if (isEventStream && res.body) {
+    updateStreamingBody('')
+    const decoder = new TextDecoder()
+    let accumulated = ''
+    try {
+      const reader = res.body.getReader()
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        accumulated += chunk
+        updateStreamingBody(accumulated)
+      }
+      // Flush any remaining bytes (partial UTF-8 sequences)
+      accumulated += decoder.decode()
+      updateStreamingBody(accumulated)
+    } finally {
+      updateStreamingBody(null)
+    }
+    responseBody = accumulated
+  } else {
+    responseBody = await res.text()
+  }
 
   const response: ApiResponse = {
     status: res.status,
@@ -78,7 +108,7 @@ export async function sendRequest(request: ApiRequest, signal?: AbortSignal): Pr
     headers: responseHeaders,
     body: responseBody,
     size: new Blob([responseBody]).size,
-    duration,
+    duration: isEventStream ? Math.round(performance.now() - start) : duration,
   }
 
   // Save to history
