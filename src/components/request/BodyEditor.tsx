@@ -1,14 +1,8 @@
+import { useMemo } from 'react'
 import { useRequestStore, useUiStore } from '../../store'
 import { KeyValueTable } from '../common/KeyValueTable'
 import type { BodyType } from '../../types/api'
 import { t } from '../../i18n'
-
-const bodyTypes: { value: BodyType; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'json', label: 'JSON' },
-  { value: 'formdata', label: 'Form Data' },
-  { value: 'raw', label: 'Raw' },
-]
 
 export function BodyEditor() {
   const request = useRequestStore((s) => s.request)
@@ -18,6 +12,13 @@ export function BodyEditor() {
   const setBodyRaw = useRequestStore((s) => s.setBodyRaw)
   const lang = useUiStore((s) => s.lang)
   const tr = (key: string) => t[lang]?.[key] ?? key
+
+  const bodyTypes = useMemo(() => [
+    { value: 'none' as BodyType, label: tr('noneLabel') },
+    { value: 'json' as BodyType, label: tr('jsonLabel') },
+    { value: 'formdata' as BodyType, label: tr('formDataLabel') },
+    { value: 'raw' as BodyType, label: tr('raw') },
+  ], [tr])
 
   return (
     <div className="flex flex-col gap-2 animate-fade-in">
@@ -40,7 +41,7 @@ export function BodyEditor() {
           <textarea
             className="input-linear w-full min-h-[200px] resize-y"
             style={{ fontFamily: 'var(--font-mono)' }}
-            placeholder='{ "key": "value" }'
+            placeholder={tr('jsonExample')}
             value={request.bodyJson}
             onChange={(e) => setBodyJson(e.target.value)}
             spellCheck={false}
@@ -86,7 +87,7 @@ export function BodyEditor() {
         <textarea
           className="input-linear w-full min-h-[200px] resize-y animate-fade-in"
           style={{ fontFamily: 'var(--font-mono)' }}
-          placeholder="Raw text..."
+          placeholder={tr('rawTextHint')}
           value={request.bodyRaw}
           onChange={(e) => setBodyRaw(e.target.value)}
           spellCheck={false}

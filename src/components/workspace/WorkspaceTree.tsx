@@ -587,9 +587,9 @@ export default function WorkspaceTree() {
   const handleCreateItem = useCallback(async (type: 'folder' | 'request', parentId: number | null) => {
     let newId: number
     if (type === 'folder') {
-      newId = await addWorkspaceFolder('New Folder', parentId)
+      newId = await addWorkspaceFolder(tr('newFolder'), parentId)
     } else {
-      newId = await addWorkspaceRequest('New Request', undefined, parentId)
+      newId = await addWorkspaceRequest(tr('newRequest'), undefined, parentId)
     }
     if (parentId != null) {
       addExpanded(parentId)
@@ -667,14 +667,14 @@ export default function WorkspaceTree() {
   const contextMenuItems = [
     ...(contextTarget?.type === 'folder'
       ? [
-          { label: <><FolderPlus size={14} /> Add Subfolder</>, action: handleContextCreateFolder },
-          { label: <><FilePlus size={14} /> Add Request</>, action: handleContextCreateRequest },
+          { label: <><FolderPlus size={14} /> {tr('addSubfolder')}</>, action: handleContextCreateFolder },
+          { label: <><FilePlus size={14} /> {tr('addRequestItem')}</>, action: handleContextCreateRequest },
           { label: <><Download size={14} /> {tr('importOpenApi')}</>, action: handleContextImport },
         ]
       : []),
     { label: <><Upload size={14} /> {tr('exportOpenApi')}</>, action: handleContextExport },
-    { label: <><Pencil size={14} /> Rename</>, action: handleContextRename },
-    { label: <><Trash2 size={14} /> Delete</>, action: handleContextDelete, danger: true },
+    { label: <><Pencil size={14} /> {tr('rename')}</>, action: handleContextRename },
+    { label: <><Trash2 size={14} /> {tr('delete')}</>, action: handleContextDelete, danger: true },
   ]
 
   return (

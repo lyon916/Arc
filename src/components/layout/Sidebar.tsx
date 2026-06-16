@@ -28,7 +28,7 @@ export function Sidebar({ forceTab }: { forceTab?: 'history' | 'workspace' }) {
   useEffect(() => {
     setLoading(true)
     loadHistory().then((data) => { setRecords(data); setLoading(false) })
-      .catch(() => { setLoading(false); showToast('historyLoadFailed', 'error') })
+      .catch(() => { setLoading(false); showToast(tr('historyLoadFailed'), 'error') })
   }, [historyVersion])
 
   const handleReplay = (r: HistoryRecord) => {

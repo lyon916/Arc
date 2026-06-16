@@ -1,18 +1,19 @@
+import { useMemo } from 'react'
 import { useRequestStore, useUiStore } from '../../store'
 import type { AuthType } from '../../types/api'
 import { t } from '../../i18n'
-
-const authTypes: { value: AuthType; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'bearer', label: 'Bearer' },
-  { value: 'basic', label: 'Basic' },
-]
 
 export default function AuthEditor() {
   const { request, setAuthType, setAuthToken, setAuthUser, setAuthPass } = useRequestStore()
   const { authType, authToken, authUser, authPass } = request
   const lang = useUiStore((s) => s.lang)
   const tr = (key: string) => t[lang]?.[key] ?? key
+
+  const authTypes = useMemo(() => [
+    { value: 'none' as AuthType, label: tr('noneLabel') },
+    { value: 'bearer' as AuthType, label: tr('bearerLabel') },
+    { value: 'basic' as AuthType, label: tr('basicLabel') },
+  ], [tr])
 
   return (
     <div className="flex flex-col gap-3 animate-fade-in">
@@ -35,7 +36,7 @@ export default function AuthEditor() {
           <input
             className="input-linear w-full"
             type="password"
-            placeholder="Token"
+            placeholder={tr('authToken')}
             value={authToken}
             onChange={(e) => setAuthToken(e.target.value)}
           />
@@ -47,14 +48,14 @@ export default function AuthEditor() {
         <div className="flex flex-col gap-2 animate-fade-in">
           <input
             className="input-linear w-full"
-            placeholder="Username"
+            placeholder={tr('authUsername')}
             value={authUser}
             onChange={(e) => setAuthUser(e.target.value)}
           />
           <input
             className="input-linear w-full"
             type="password"
-            placeholder="Password"
+            placeholder={tr('authPassword')}
             value={authPass}
             onChange={(e) => setAuthPass(e.target.value)}
           />

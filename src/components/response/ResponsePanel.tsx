@@ -147,7 +147,7 @@ export function ResponsePanel() {
           <svg width="14" height="14" viewBox="0 0 32 32" className="animate-spin" style={{ color: 'var(--accent-brand)', flexShrink: 0 }}>
             <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="48 24" strokeLinecap="round" />
           </svg>
-          <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Streaming…</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{tr('streaming')}</span>
           <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>
             {formatElapsed(elapsed)}
           </span>
@@ -219,7 +219,7 @@ export function ResponsePanel() {
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
         </svg>
         <p style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>
-          sendToSee
+          {tr('sendToSee')}
         </p>
       </div>
     )
@@ -235,8 +235,8 @@ export function ResponsePanel() {
 
   const copyBody = () => {
     navigator.clipboard.writeText(response.body).then(
-      () => showToast('copySuccess', 'success'),
-      () => showToast('copyFailed', 'error'),
+      () => showToast(tr('copySuccess'), 'success'),
+      () => showToast(tr('copyFailed'), 'error'),
     )
   }
   const downloadBody = () => {
@@ -313,13 +313,13 @@ export function ResponsePanel() {
           fontSize: 12,
           color: 'var(--accent-brand)',
         }}>
-          <span>largeBody ({(response.size / 1024).toFixed(0)} KB)，largeBodyTruncated</span>
+          <span>{tr('largeBody')} ({(response.size / 1024).toFixed(0)} KB)，{tr('largeBodyTruncated')}</span>
           <button
             className="btn-ghost-linear"
             style={{ fontSize: 11, padding: '2px 8px', marginLeft: 'auto' }}
             onClick={() => setShowFullBody(true)}
           >
-            showAll
+            {tr('showAll')}
           </button>
         </div>
       )}
@@ -348,9 +348,9 @@ export function ResponsePanel() {
           <div className="flex flex-col gap-3">
             {/* General */}
             <Section title={tr('general')}>
-              <HeaderRow label="Request URL" value={request.url} />
-              <HeaderRow label="Request Method" value={request.method} />
-              <HeaderRow label="Status Code" value={`${response.status} ${response.statusText}`} />
+              <HeaderRow label={tr('requestUrl')} value={request.url} />
+              <HeaderRow label={tr('requestMethod')} value={request.method} />
+              <HeaderRow label={tr('statusCode')} value={`${response.status} ${response.statusText}`} />
             </Section>
 
             {/* Response Headers */}

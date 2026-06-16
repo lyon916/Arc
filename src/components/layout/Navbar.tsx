@@ -158,7 +158,7 @@ export function Navbar() {
             className="btn-ghost-linear"
             style={{ padding: isMobile ? '0 5px' : '4px 8px', height: isMobile ? 26 : undefined, fontSize: 12, fontWeight: 590 }}
             onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
-            title="Switch Language"
+            title={String(tr('switchLang'))}
           >
             {lang === 'zh' ? tr('langEn') : tr('langZh')}
           </button>
