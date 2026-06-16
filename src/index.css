@@ -754,6 +754,10 @@ body {
   overflow: hidden;
 }
 
+/* ===== Search clear button ===== */
+.btn-clear-search { background: transparent; border: none; transition: all var(--transition-normal); }
+.btn-clear-search:hover { background: var(--bg-hover); color: var(--text-primary); }
+
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

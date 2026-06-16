@@ -612,10 +612,11 @@ export default function WorkspaceTree() {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
+              className="btn-clear-search"
               style={{
                 position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
                 padding: 2, borderRadius: 4, color: 'var(--text-tertiary)',
-                display: 'flex', alignItems: 'center',
+                display: 'flex', alignItems: 'center', cursor: 'pointer',
               }}
             >
               <X size={14} />
