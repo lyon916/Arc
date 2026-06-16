@@ -482,7 +482,7 @@ export default function WorkspaceTree() {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const items = parseOpenApi(await file.text())
+      const items = parseOpenApi(await file.text(), 'http://localhost')
       await doImport(items)
       setShowImportPanel(false)
     } catch (err) {
@@ -498,7 +498,8 @@ export default function WorkspaceTree() {
     try {
       const res = await fetch(url)
       if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
-      const items = parseOpenApi(await res.text())
+      const origin = new URL(url).origin
+      const items = parseOpenApi(await res.text(), origin)
       await doImport(items)
       setImportUrl('')
       setShowImportPanel(false)

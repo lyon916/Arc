@@ -162,7 +162,7 @@ export function exportToOpenApi(tree: WorkspaceTreeNode[]): string {
 
 // ---- Import ----
 
-export function parseOpenApi(json: string): WorkspaceItem[] {
+export function parseOpenApi(json: string, defaultBaseUrl?: string): WorkspaceItem[] {
   let spec: OpenApiSpec
   try {
     spec = JSON.parse(json)
@@ -174,7 +174,7 @@ export function parseOpenApi(json: string): WorkspaceItem[] {
     throw new Error('Not a valid OpenAPI specification (missing "openapi" field)')
   }
 
-  const baseUrl = spec.servers?.[0]?.url || ''
+  const baseUrl = spec.servers?.[0]?.url || defaultBaseUrl || 'http://localhost'
   const items: WorkspaceItem[] = []
   const folderMap = new Map<string, number>() // tag name → temp parentId
   let tempId = -1
