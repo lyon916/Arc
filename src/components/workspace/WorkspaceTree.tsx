@@ -376,7 +376,18 @@ export default function WorkspaceTree() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bumpWorkspace = useUiStore((s) => s.bumpWorkspace)
 
-  // 导出 OpenAPI
+  // 下载 JSON 文件
+  const downloadJson = useCallback((json: string, filename: string) => {
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [])
+
+  // 导出整个集合
   const handleExport = useCallback(async () => {
     try {
       const currentTree = await loadWorkspaceTree()
@@ -384,19 +395,27 @@ export default function WorkspaceTree() {
         showToast(tr('noResults'), 'info')
         return
       }
-      const json = exportToOpenApi(currentTree)
-      const blob = new Blob([json], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'arc-openapi.json'
-      a.click()
-      URL.revokeObjectURL(url)
+      downloadJson(exportToOpenApi(currentTree), 'arc-openapi.json')
       showToast(tr('exportedSuccessfully'), 'success')
     } catch {
       showToast(tr('formatError'), 'error')
     }
-  }, [showToast, tr])
+  }, [showToast, tr, downloadJson])
+
+  // 导出单个文件夹或 API
+  const handleContextExport = useCallback(() => {
+    if (!contextMenu) return
+    const node = findNodeById(tree, contextMenu.id)
+    if (!node) return
+    try {
+      const filename = `${node.name.replace(/[^a-zA-Z0-9一-鿿_-]/g, '_')}.openapi.json`
+      downloadJson(exportToOpenApi([node]), filename)
+      showToast(tr('exportedSuccessfully'), 'success')
+    } catch {
+      showToast(tr('formatError'), 'error')
+    }
+    setContextMenu(null)
+  }, [contextMenu, tree, showToast, tr, downloadJson])
 
   // OpenAPI items → DB (共用)
   const doImport = useCallback(async (items: ReturnType<typeof parseOpenApi>) => {
@@ -569,6 +588,7 @@ export default function WorkspaceTree() {
           { label: <><FilePlus size={14} /> Add Request</>, action: handleContextCreateRequest },
         ]
       : []),
+    { label: <><Download size={14} /> {tr('exportOpenApi')}</>, action: handleContextExport },
     { label: <><Pencil size={14} /> Rename</>, action: handleContextRename },
     { label: <><Trash2 size={14} /> Delete</>, action: handleContextDelete, danger: true },
   ]
