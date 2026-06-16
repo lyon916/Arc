@@ -572,8 +572,10 @@ export default function WorkspaceTree() {
       const result: WorkspaceTreeNode[] = []
       for (const node of nodes) {
         const nameMatch = node.name.toLowerCase().includes(q)
+        const urlMatch = node.type === 'request' ? (node.request?.url || '').toLowerCase().includes(q) : false
+        const match = nameMatch || urlMatch
         let filteredChildren = filterNodes(node.children)
-        if (nameMatch || filteredChildren.length > 0) {
+        if (match || filteredChildren.length > 0) {
           result.push({ ...node, children: filteredChildren })
         }
       }
