@@ -1,4 +1,10 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react'
+import { t, type Lang } from '../../i18n'
+
+function getLang(): Lang {
+  const saved = localStorage.getItem('arc-lang') as Lang | null
+  return saved || (navigator.language.startsWith('zh') ? 'zh' : 'en')
+}
 
 interface Props {
   children: ReactNode
@@ -33,6 +39,8 @@ export class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback
+      const lang = getLang()
+      const tr = (key: string) => t[lang]?.[key] ?? key
 
       return (
         <div
@@ -51,10 +59,10 @@ export class ErrorBoundary extends Component<Props, State> {
         >
           <div style={{ fontSize: '64px' }}>💥</div>
           <h1 style={{ fontSize: '24px', fontWeight: 600, margin: 0 }}>
-            应用出现错误
+            {tr('appError')}
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', textAlign: 'center', maxWidth: '480px', margin: 0 }}>
-            {this.state.error?.message || '发生了未知错误'}
+            {this.state.error?.message || tr('unknownErrorOccurred')}
           </p>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
@@ -70,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 fontFamily: 'var(--font-primary)',
               }}
             >
-              刷新页面
+              {tr('refreshPage')}
             </button>
             <button
               onClick={this.handleReset}
@@ -85,13 +93,13 @@ export class ErrorBoundary extends Component<Props, State> {
                 fontFamily: 'var(--font-primary)',
               }}
             >
-              重试
+              {tr('retry')}
             </button>
           </div>
           {this.state.errorInfo && (
             <details style={{ marginTop: '16px', maxWidth: '640px', width: '100%' }}>
               <summary style={{ cursor: 'pointer', fontSize: '13px', color: 'var(--text-tertiary)' }}>
-                查看错误详情
+                {tr('viewDetails')}
               </summary>
               <pre
                 style={{

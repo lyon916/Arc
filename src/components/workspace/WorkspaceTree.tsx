@@ -527,7 +527,7 @@ export default function WorkspaceTree() {
     bumpWorkspace()
     const imported = requests.length - skipped
     const msg = skipped > 0
-      ? `${tr('importedFromOpenApi')} (${imported})，${skipped} ${lang === 'zh' ? '个重复已跳过' : 'duplicates skipped'}`
+      ? `${tr('importedFromOpenApi')} (${imported})，${skipped} ${tr('duplicatesSkipped')}`
       : `${tr('importedFromOpenApi')} (${imported})`
     showToast(msg, 'success')
   }, [showToast, tr, bumpWorkspace, lang])
@@ -642,7 +642,9 @@ export default function WorkspaceTree() {
     setContextMenu(null)
     load()
     const count = allSnapshots.length
-    const label = count > 1 ? `已删除 ${count} 项` : `已删除"${contextTarget?.name ?? '此项'}"`
+    const label = count > 1
+      ? `${tr('deletedSingle')} ${count} ${tr('deletedNItems')}`
+      : `${tr('deletedSingle')}"${contextTarget?.name ?? tr('thisItem')}"`
     showToast(label, 'info', {
       label: tr('undo'),
       onClick: async () => {
@@ -764,7 +766,7 @@ export default function WorkspaceTree() {
               </button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>or</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{tr('or')}</span>
               <button
                 className="btn-ghost-linear"
                 style={{ padding: '3px 8px', fontSize: 11 }}

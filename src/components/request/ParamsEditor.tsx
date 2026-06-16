@@ -12,7 +12,7 @@ export function ParamsEditor() {
     <KeyValueTable
       items={request.queryParams}
       onChange={setQueryParams}
-      keyPlaceholder={tr('paramName')}
+      keyPlaceholder={tr('paramKey')}
       valuePlaceholder={tr('paramValue')}
     />
   )

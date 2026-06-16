@@ -61,7 +61,7 @@ export default function CodeGenerator({ open, onClose }: Props) {
             fontSize: '14px',
             color: 'var(--text-primary)',
           }}>
-            生成代码
+            {tr('codeGen')}
           </span>
           <button className="btn btn-sm btn-ghost" onClick={onClose} style={{ padding: '4px 8px' }}>
             <X size={16} />

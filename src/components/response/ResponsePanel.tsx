@@ -116,7 +116,7 @@ export function ResponsePanel() {
   const LARGE_BODY_THRESHOLD = 500 * 1024 // 500KB
   const isLargeBody = response && response.size > LARGE_BODY_THRESHOLD
   const displayBody = isLargeBody && !showFullBody && viewMode === 'raw'
-    ? response!.body.slice(0, LARGE_BODY_THRESHOLD) + '\n\n… 响应体过大，已截断显示'
+    ? response!.body.slice(0, LARGE_BODY_THRESHOLD) + tr('largeBodyHint')
     : response?.body || ''
 
   if (loading && streamingBody == null) {

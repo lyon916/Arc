@@ -160,7 +160,7 @@ export function Navbar() {
             onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
             title="Switch Language"
           >
-            {lang === 'zh' ? 'EN' : '中'}
+            {lang === 'zh' ? tr('langEn') : tr('langZh')}
           </button>
         </div>
       </div>

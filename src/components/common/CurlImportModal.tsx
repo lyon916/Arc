@@ -104,7 +104,7 @@ export default function CurlImportModal({ open, onClose }: Props) {
             fontSize: '13px',
             lineHeight: '1.5',
           }}
-          placeholder={'粘贴 cURL 命令或 URL 链接，例如：\ncurl -X POST https://api.example.com/data -H \'Content-Type: application/json\' -d \'{"key":"value"}\'\n或 https://api.example.com/data?page=1&limit=10'}
+          placeholder={tr('curlPlaceholder')}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {

@@ -75,8 +75,8 @@ export function BodyEditor() {
           <KeyValueTable
             items={request.bodyFormData}
             onChange={setBodyFormData}
-            keyPlaceholder="字段名"
-            valuePlaceholder="值"
+            keyPlaceholder={tr('fieldName')}
+            valuePlaceholder={tr('fieldValue')}
           />
         </div>
       )}
