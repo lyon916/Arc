@@ -403,6 +403,7 @@ export default function WorkspaceTree() {
   const lastClickedIdRef = useRef<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showImportPanel, setShowImportPanel] = useState(false)
+  const [importTargetId, setImportTargetId] = useState<number | null>(null)
   const [importUrl, setImportUrl] = useState('')
 
   // 获取平铺的可见节点列表（用于 Shift 范围选择）
@@ -469,7 +470,10 @@ export default function WorkspaceTree() {
   }, [contextMenu, tree, showToast, tr, downloadJson])
 
   // OpenAPI items → DB (共用)
-  const doImport = useCallback(async (items: ReturnType<typeof parseOpenApi>) => {
+  const doImport = useCallback(async (
+    items: ReturnType<typeof parseOpenApi>,
+    targetParentId: number | null = null,
+  ) => {
     if (items.length === 0) {
       showToast(tr('noResults'), 'info')
       return
@@ -488,7 +492,7 @@ export default function WorkspaceTree() {
         uid: folder.uid,
         name: folder.name,
         type: 'folder',
-        parentId: null,
+        parentId: folder.parentId !== null ? null : targetParentId,
         order: folder.order,
         createdAt: Date.now(),
       })
@@ -505,9 +509,9 @@ export default function WorkspaceTree() {
         continue
       }
       seen.add(key)
-      let realParentId: number | null = null
+      let realParentId: number | null = targetParentId
       if (reqItem.parentId !== null) {
-        realParentId = idMap.get(reqItem.parentId) ?? null
+        realParentId = idMap.get(reqItem.parentId) ?? targetParentId
       }
       await db.workspace.add({
         uid: reqItem.uid,
@@ -534,8 +538,9 @@ export default function WorkspaceTree() {
     if (!file) return
     try {
       const items = parseOpenApi(await file.text(), 'http://localhost')
-      await doImport(items)
+      await doImport(items, importTargetId)
       setShowImportPanel(false)
+      setImportTargetId(null)
     } catch (err) {
       showToast(err instanceof Error ? err.message : tr('formatError'), 'error')
     }
@@ -551,9 +556,10 @@ export default function WorkspaceTree() {
       if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
       const origin = new URL(url).origin
       const items = parseOpenApi(await res.text(), origin)
-      await doImport(items)
+      await doImport(items, importTargetId)
       setImportUrl('')
       setShowImportPanel(false)
+      setImportTargetId(null)
     } catch (err) {
       showToast(err instanceof Error ? err.message : tr('formatError'), 'error')
     }
@@ -647,11 +653,21 @@ export default function WorkspaceTree() {
     }, 6000)
   }
 
+  const handleContextImport = () => {
+    if (!contextMenu) return
+    const node = findNodeById(tree, contextMenu.id)
+    if (node?.type !== 'folder') return
+    setImportTargetId(contextMenu.id)
+    setShowImportPanel(true)
+    setContextMenu(null)
+  }
+
   const contextMenuItems = [
     ...(contextTarget?.type === 'folder'
       ? [
           { label: <><FolderPlus size={14} /> Add Subfolder</>, action: handleContextCreateFolder },
           { label: <><FilePlus size={14} /> Add Request</>, action: handleContextCreateRequest },
+          { label: <><Download size={14} /> {tr('importOpenApi')}</>, action: handleContextImport },
         ]
       : []),
     { label: <><Upload size={14} /> {tr('exportOpenApi')}</>, action: handleContextExport },
@@ -698,7 +714,7 @@ export default function WorkspaceTree() {
         <button
           className="btn-ghost-linear"
           style={{ padding: '5px 7px', display: 'flex', alignItems: 'center' }}
-          onClick={() => setShowImportPanel(!showImportPanel)}
+          onClick={() => { setImportTargetId(null); setShowImportPanel(!showImportPanel) }}
           title={tr('importOpenApi')}
         >
           <Download size={14} />
@@ -716,6 +732,18 @@ export default function WorkspaceTree() {
       {showImportPanel && (
         <div style={{ padding: '0 4px 6px' }}>
           <div className="slab-subtle" style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {importTargetId != null && (
+              <div style={{ color: 'var(--text-tertiary)', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Folder size={12} />
+                {tr('import_')} → {findNodeById(tree, importTargetId)?.name ?? '…'}
+                <button
+                  onClick={() => { setImportTargetId(null); setShowImportPanel(false) }}
+                  style={{ marginLeft: 'auto', padding: '1px 4px', color: 'var(--text-tertiary)' }}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 4 }}>
               <input
                 type="text"
