@@ -29,13 +29,16 @@ Browser-based API tools all share one fatal flaw: **CORS**. You paste a URL, hit
 - **🛡 Built-in CORS Proxy** — One-click toggle. Requests route through an open-source [Cloudflare Worker](./worker/) — no logging, no storage, deploy your own in 30 seconds.
 - **HTTP Request Builder** — GET / POST / PUT / DELETE / PATCH / HEAD / OPTIONS with Query Params, Headers, Body (JSON / FormData / Raw)
 - **Authentication** — Bearer Token and Basic Auth
+- **OpenAPI Import & Export** — Import OpenAPI specs from file or URL into collections; export any folder or API as OpenAPI JSON. Right-click a folder to import directly into it. Auto-dedup skips duplicate paths.
+- **SSE Streaming** — Real-time display of Server-Sent Events with streaming timestamps
+- **Response Viewer** — Chrome DevTools–style Headers panel, syntax-highlighted body (pretty/raw), response caching, and timing display
 - **Environment Variables** — Multi-environment `{{varname}}` syntax with quick switching
-- **Collections** — Save and organize requests with folder grouping
+- **Collections** — Save and organize requests with folder grouping, shift multi-select, batch drag, and right-click delete
 - **Request History** — Auto-saved to local IndexedDB, searchable and undo-able
 - **cURL Import** — Paste cURL commands to instantly populate a request
 - **Code Generation** — Export as JavaScript / TypeScript / cURL snippets
 - **17 Themes** — Linear Dark, Dracula, Nord, Catppuccin, Solarized, GitHub Light, and more
-- **i18n** — English / Chinese (auto-detects browser language)
+- **i18n** — Full English / Chinese coverage (auto-detects browser language)
 - **Mobile Responsive** — Full-featured bottom-tab layout
 - **Keyboard Shortcuts** — `Ctrl+Enter` send, `Ctrl+S` save, `Ctrl+L` focus URL, `Esc` cancel
 
