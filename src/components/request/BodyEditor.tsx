@@ -13,6 +13,10 @@ export function BodyEditor() {
   const lang = useUiStore((s) => s.lang)
   const tr = (key: string) => t[lang]?.[key] ?? key
 
+  // 防御旧数据中可能缺失的字段
+  const bodyJson = request.bodyJson ?? ''
+  const bodyRaw = request.bodyRaw ?? ''
+
   const bodyTypes = useMemo(() => [
     { value: 'none' as BodyType, label: tr('noneLabel') },
     { value: 'json' as BodyType, label: tr('jsonLabel') },
@@ -42,24 +46,24 @@ export function BodyEditor() {
             className="input-linear w-full min-h-[200px] resize-y"
             style={{ fontFamily: 'var(--font-mono)' }}
             placeholder={tr('jsonExample')}
-            value={request.bodyJson}
+            value={bodyJson}
             onChange={(e) => setBodyJson(e.target.value)}
             spellCheck={false}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {(() => {
-              if (!request.bodyJson.trim()) return null
-              try { JSON.parse(request.bodyJson); return null } catch {
+              if (!bodyJson.trim()) return null
+              try { JSON.parse(bodyJson); return null } catch {
                 return <span style={{ color: 'var(--status-error)', fontSize: 11 }}>{tr('jsonError')}</span>
               }
             })()}
-            {request.bodyJson.trim() && (
+            {bodyJson.trim() && (
               <button
                 className="btn-ghost-linear"
                 style={{ fontSize: 11, padding: '2px 8px', marginLeft: 'auto' }}
                 onClick={() => {
                   try {
-                    setBodyJson(JSON.stringify(JSON.parse(request.bodyJson), null, 2))
+                    setBodyJson(JSON.stringify(JSON.parse(bodyJson), null, 2))
                   } catch { /* ignore */ }
                 }}
               >
@@ -88,7 +92,7 @@ export function BodyEditor() {
           className="input-linear w-full min-h-[200px] resize-y animate-fade-in"
           style={{ fontFamily: 'var(--font-mono)' }}
           placeholder={tr('rawTextHint')}
-          value={request.bodyRaw}
+          value={bodyRaw}
           onChange={(e) => setBodyRaw(e.target.value)}
           spellCheck={false}
         />

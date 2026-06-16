@@ -65,7 +65,9 @@ export const useRequestStore = create<RequestState>((set) => ({
   loadRequest: (req, openapiMeta = null) => {
     const key = cacheKey(req)
     const cached = responseCache.get(key)
-    set({ request: req, openapiMeta, response: cached?.response ?? null, streamingBody: cached?.streamingBody ?? null, responseTimestamp: cached?.timestamp ?? null, error: null })
+    // 合并默认值，防止旧数据中缺失字段
+    const merged = { ...defaultRequest, ...req }
+    set({ request: merged, openapiMeta, response: cached?.response ?? null, streamingBody: cached?.streamingBody ?? null, responseTimestamp: cached?.timestamp ?? null, error: null })
   },
   resetRequest: () => set({
     request: { ...defaultRequest, headers: defaultHeaders },
