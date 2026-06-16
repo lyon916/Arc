@@ -13,6 +13,7 @@ import {
   Search,
   Upload,
   Download,
+  RefreshCw,
   X,
 } from 'lucide-react'
 import { useRequestStore, useUiStore } from '../../store'
@@ -202,7 +203,7 @@ function TreeNode({
       }
       setSelectedIds(new Set([id]))
       lastClickedIdRef.current = id
-      if (node.request) loadRequest(node.request)
+      if (node.request) loadRequest(node.request, node.openapiMeta)
     }
   }
 
@@ -405,6 +406,7 @@ export default function WorkspaceTree() {
   const [showImportPanel, setShowImportPanel] = useState(false)
   const [importTargetId, setImportTargetId] = useState<number | null>(null)
   const [importUrl, setImportUrl] = useState('')
+  const [syncing, setSyncing] = useState(false)
 
   // 获取平铺的可见节点列表（用于 Shift 范围选择）
   function flattenVisible(nodes: WorkspaceTreeNode[]): WorkspaceTreeNode[] {
@@ -487,7 +489,9 @@ export default function WorkspaceTree() {
     const folders = items.filter((i) => i.type === 'folder')
     const requests = items.filter((i) => i.type === 'request')
 
-    for (const folder of folders) {
+    // tempIds: parseOpenApi creates folders with sequential tempIds (-1, -2, -3...)
+    for (let i = 0; i < folders.length; i++) {
+      const folder = folders[i]
       const newId = await db.workspace.add({
         uid: folder.uid,
         name: folder.name,
@@ -496,9 +500,7 @@ export default function WorkspaceTree() {
         order: folder.order,
         createdAt: Date.now(),
       })
-      idMap.set(folder.uid as unknown as number, newId)
-      const oldId = folder.uid.replace('ws-import-', '')
-      idMap.set(Number(oldId), newId)
+      idMap.set(-(i + 1), newId)
     }
 
     let skipped = 0
@@ -520,6 +522,7 @@ export default function WorkspaceTree() {
         parentId: realParentId,
         order: reqItem.order,
         request: reqItem.request,
+        openapiMeta: reqItem.openapiMeta,
         createdAt: Date.now(),
       })
     }
@@ -537,7 +540,7 @@ export default function WorkspaceTree() {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const items = parseOpenApi(await file.text(), 'http://localhost')
+      const items = parseOpenApi(await file.text(), 'http://localhost', file.name)
       await doImport(items, importTargetId)
       setShowImportPanel(false)
       setImportTargetId(null)
@@ -555,7 +558,7 @@ export default function WorkspaceTree() {
       const res = await fetch(url)
       if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
       const origin = new URL(url).origin
-      const items = parseOpenApi(await res.text(), origin)
+      const items = parseOpenApi(await res.text(), origin, importUrl.trim())
       await doImport(items, importTargetId)
       setImportUrl('')
       setShowImportPanel(false)
@@ -564,6 +567,143 @@ export default function WorkspaceTree() {
       showToast(err instanceof Error ? err.message : tr('formatError'), 'error')
     }
   }, [importUrl, showToast, tr, doImport])
+
+  // known OpenAPI endpoint paths to probe
+  const SPEC_PATHS = ['/v3/api-docs', '/swagger.json', '/openapi.json', '/api-docs']
+
+  // 同步：重新获取 sourceUrl 的 OpenAPI spec 并更新所有匹配的接口
+  const handleSync = useCallback(async () => {
+    setSyncing(true)
+    try {
+      const allItems = await db.workspace.toArray()
+
+      // 1) 收集已有的 sourceUrl
+      const sourceUrls = new Set<string>(
+        allItems
+          .filter((item) => item.openapiMeta?.sourceUrl && item.type === 'request')
+          .map((item) => item.openapiMeta!.sourceUrl)
+      )
+
+      // 2) 对没有 openapiMeta 的请求，从 request URL 提取 origin，探测 OpenAPI 端点
+      const itemsWithoutMeta = allItems.filter(
+        (item) => item.type === 'request' && !item.openapiMeta?.sourceUrl && item.request?.url
+      )
+      const origins = new Set<string>()
+      for (const item of itemsWithoutMeta) {
+        try { origins.add(new URL(item.request!.url).origin) } catch { /* skip */ }
+      }
+
+      for (const origin of origins) {
+        // 检查是否有已知 sourceUrl 已经覆盖同一个 origin（避免重复探测）
+        if ([...sourceUrls].some((u) => { try { return new URL(u).origin === origin } catch { return false } })) continue
+
+        for (const p of SPEC_PATHS) {
+          const candidate = origin + p
+          try {
+            const res = await fetch(candidate)
+            if (res.ok) {
+              const text = await res.text()
+              try {
+                JSON.parse(text) // validate
+                sourceUrls.add(candidate)
+                break
+              } catch { /* not valid JSON */ }
+            }
+          } catch { /* fetch failed */ }
+        }
+      }
+
+      if (sourceUrls.size === 0) {
+        showToast(tr('noResults'), 'info')
+        return
+      }
+
+      let totalUpdated = 0
+
+      for (const sourceUrl of sourceUrls) {
+        try {
+          const res = await fetch(sourceUrl)
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          const origin = new URL(sourceUrl).origin
+          const newItems = parseOpenApi(await res.text(), origin, sourceUrl)
+
+          // Build new spec index: method+url → spec item
+          const newSpecIndex = new Map<string, typeof newItems[0]>()
+          for (const item of newItems) {
+            if (item.type === 'request' && item.request) {
+              const key = `${item.request.method} ${item.request.url}`
+              newSpecIndex.set(key, item)
+            }
+          }
+
+          // Update existing items that match this source (either by openapiMeta.sourceUrl
+          // or by request URL falling under the same origin — backfill for old imports)
+          for (const existing of allItems) {
+            if (existing.type !== 'request' || !existing.request) continue
+
+            // Match by explicit sourceUrl, or by origin (for items without meta)
+            const belongsToSource =
+              existing.openapiMeta?.sourceUrl === sourceUrl ||
+              (!existing.openapiMeta?.sourceUrl && (() => { try { return new URL(existing.request!.url).origin === origin } catch { return false } })())
+
+            if (!belongsToSource) continue
+
+            const key = `${existing.request.method} ${existing.request.url}`
+            const specItem = newSpecIndex.get(key)
+            if (!specItem || !specItem.request) continue
+
+            // Merge: update name, openapiMeta, param/header descriptions
+            const updatedReq = { ...existing.request }
+
+            // Update param descriptions from new spec
+            const newParams = specItem.request.queryParams
+            for (const np of newParams) {
+              if (!np.description) continue
+              const idx = updatedReq.queryParams.findIndex((p) => p.key === np.key)
+              if (idx >= 0) {
+                updatedReq.queryParams[idx] = { ...updatedReq.queryParams[idx], description: np.description }
+              } else {
+                updatedReq.queryParams.push(np)
+              }
+            }
+
+            // Update header descriptions from new spec
+            const newHeaders = specItem.request.headers
+            for (const nh of newHeaders) {
+              if (!nh.description) continue
+              const idx = updatedReq.headers.findIndex((h) => h.key === nh.key)
+              if (idx >= 0) {
+                updatedReq.headers[idx] = { ...updatedReq.headers[idx], description: nh.description }
+              } else {
+                updatedReq.headers.push(nh)
+              }
+            }
+
+            await db.workspace.update(existing.id!, {
+              name: specItem.name,
+              request: updatedReq,
+              openapiMeta: specItem.openapiMeta,
+            })
+            totalUpdated++
+          }
+        } catch (err) {
+          showToast(`${tr('syncFailed')}: ${sourceUrl} — ${err instanceof Error ? err.message : ''}`, 'error')
+        }
+      }
+
+      if (totalUpdated > 0) {
+        bumpWorkspace()
+        load()
+        showToast(`${tr('syncedSuccessfully')}，${totalUpdated} ${tr('nItemsSynced')}`, 'success')
+      } else {
+        showToast(tr('noResults'), 'info')
+      }
+    } catch {
+      showToast(tr('syncFailed'), 'error')
+    } finally {
+      setSyncing(false)
+    }
+  }, [showToast, tr, bumpWorkspace])
 
   const filteredTree = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -722,6 +862,15 @@ export default function WorkspaceTree() {
           title={tr('importOpenApi')}
         >
           <Download size={14} />
+        </button>
+        <button
+          className="btn-ghost-linear"
+          style={{ padding: '5px 7px', display: 'flex', alignItems: 'center' }}
+          onClick={handleSync}
+          title={tr('sync')}
+          disabled={syncing}
+        >
+          <RefreshCw size={14} style={syncing ? { animation: 'spin 1s linear infinite' } : undefined} />
         </button>
         <input
           ref={fileInputRef}

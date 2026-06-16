@@ -18,6 +18,7 @@ interface OpenApiSpec {
 
 interface OpenApiOperation {
   summary?: string
+  description?: string
   operationId?: string
   tags?: string[]
   parameters?: OpenApiParameter[]
@@ -29,6 +30,7 @@ interface OpenApiOperation {
 interface OpenApiParameter {
   name: string
   in: 'query' | 'header' | 'path' | 'cookie'
+  description?: string
   required?: boolean
   schema?: { type: string; default?: string }
   example?: string
@@ -162,7 +164,7 @@ export function exportToOpenApi(tree: WorkspaceTreeNode[]): string {
 
 // ---- Import ----
 
-export function parseOpenApi(json: string, defaultBaseUrl?: string): WorkspaceItem[] {
+export function parseOpenApi(json: string, defaultBaseUrl?: string, sourceUrl?: string): WorkspaceItem[] {
   let spec: OpenApiSpec
   try {
     spec = JSON.parse(json)
@@ -177,6 +179,7 @@ export function parseOpenApi(json: string, defaultBaseUrl?: string): WorkspaceIt
   const baseUrl = spec.servers?.[0]?.url || defaultBaseUrl || 'http://localhost'
   const items: WorkspaceItem[] = []
   const folderMap = new Map<string, number>() // tag name → temp parentId
+  const batchId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   let tempId = -1
 
   // Pre-create folders from tags
@@ -185,7 +188,7 @@ export function parseOpenApi(json: string, defaultBaseUrl?: string): WorkspaceIt
       const id = tempId--
       folderMap.set(tag.name, id)
       items.push({
-        uid: `ws-import-${id}`,
+        uid: `ws-import-${batchId}-${id}`,
         name: tag.name,
         type: 'folder',
         parentId: null,
@@ -216,7 +219,7 @@ export function parseOpenApi(json: string, defaultBaseUrl?: string): WorkspaceIt
           const id = tempId--
           folderMap.set(tagName, id)
           items.push({
-            uid: `ws-import-${id}`,
+            uid: `ws-import-${batchId}-${id}`,
             name: tagName,
             type: 'folder',
             parentId: null,
@@ -228,18 +231,22 @@ export function parseOpenApi(json: string, defaultBaseUrl?: string): WorkspaceIt
       }
 
       // Parameters
+      const paramDescriptions: Record<string, string> = {}
       if (op.parameters) {
         for (const p of op.parameters) {
           const val = p.example !== undefined ? String(p.example) : (p.schema?.default !== undefined ? String(p.schema.default) : '')
           if (p.in === 'query') {
             // Don't add duplicates
             if (!req.queryParams.some((qp) => qp.key === p.name)) {
-              req.queryParams.push({ key: p.name, value: val, enabled: true })
+              req.queryParams.push({ key: p.name, value: val, enabled: true, description: p.description })
             }
           } else if (p.in === 'header') {
             if (!req.headers.some((h) => h.key === p.name)) {
-              req.headers.push({ key: p.name, value: val, enabled: true })
+              req.headers.push({ key: p.name, value: val, enabled: true, description: p.description })
             }
+          }
+          if (p.description) {
+            paramDescriptions[p.name] = p.description
           }
         }
       }
@@ -291,13 +298,20 @@ export function parseOpenApi(json: string, defaultBaseUrl?: string): WorkspaceIt
       }
 
       items.push({
-        uid: `ws-import-req-${items.length}`,
+        uid: `ws-import-req-${batchId}-${items.length}`,
         name: (op.summary || op.operationId || `${method.toUpperCase()} ${path}`).slice(0, 100),
         type: 'request',
         parentId,
         order: items.length,
         request: req,
         createdAt: Date.now(),
+        ...(sourceUrl || op.description ? {
+          openapiMeta: {
+            sourceUrl: sourceUrl || '',
+            ...(op.description ? { description: op.description } : {}),
+            ...(Object.keys(paramDescriptions).length > 0 ? { paramDescriptions } : {}),
+          },
+        } : {}),
       })
     }
   }

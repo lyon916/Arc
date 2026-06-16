@@ -4,11 +4,12 @@ import { HeadersEditor } from './HeadersEditor'
 import { ParamsEditor } from './ParamsEditor'
 import { BodyEditor } from './BodyEditor'
 import AuthEditor from './AuthEditor'
+import DocsEditor from './DocsEditor'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useUiStore } from '../../store'
 import { t } from '../../i18n'
 
-const tabs = ['Params', 'Headers', 'Body', 'Auth'] as const
+const tabs = ['Params', 'Headers', 'Body', 'Auth', 'Docs'] as const
 type TabName = typeof tabs[number]
 
 export function RequestPanel() {
@@ -43,6 +44,7 @@ export function RequestPanel() {
         {activeTab === 'Headers' && <HeadersEditor />}
         {activeTab === 'Body' && <BodyEditor />}
         {activeTab === 'Auth' && <AuthEditor />}
+        {activeTab === 'Docs' && <DocsEditor />}
       </div>
     </div>
   )

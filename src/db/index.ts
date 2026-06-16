@@ -15,6 +15,13 @@ export interface EnvRecord {
   isActive: boolean
 }
 
+export interface OpenApiMeta {
+  sourceUrl: string
+  description?: string
+  paramDescriptions?: Record<string, string>
+  responseSchema?: string
+}
+
 export interface WorkspaceItem {
   id?: number
   uid: string          // 唯一字符串ID，用于拖拽引用
@@ -24,6 +31,7 @@ export interface WorkspaceItem {
   order: number
   request?: ApiRequest
   createdAt: number
+  openapiMeta?: OpenApiMeta
 }
 
 class ArcDB extends Dexie {

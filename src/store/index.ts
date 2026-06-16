@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { ApiRequest, ApiResponse, HttpMethod, BodyType, KeyValue, AuthType } from '../types/api'
 import { defaultRequest } from '../utils/shared'
 import type { Lang } from '../i18n'
+import type { OpenApiMeta } from '../db'
 
 const defaultHeaders: KeyValue[] = [
   { key: 'Content-Type', value: 'application/json', enabled: true },
@@ -20,6 +21,7 @@ interface RequestState {
   error: string | null
   streamingBody: string | null
   responseTimestamp: number | null
+  openapiMeta: OpenApiMeta | null
   setMethod: (method: HttpMethod) => void
   setUrl: (url: string) => void
   setHeaders: (headers: KeyValue[]) => void
@@ -32,7 +34,7 @@ interface RequestState {
   setAuthToken: (token: string) => void
   setAuthUser: (user: string) => void
   setAuthPass: (pass: string) => void
-  loadRequest: (req: ApiRequest) => void
+  loadRequest: (req: ApiRequest, openapiMeta?: OpenApiMeta | null) => void
   resetRequest: () => void
   setResponse: (response: ApiResponse | null) => void
   setLoading: (loading: boolean) => void
@@ -47,6 +49,7 @@ export const useRequestStore = create<RequestState>((set) => ({
   error: null,
   streamingBody: null,
   responseTimestamp: null,
+  openapiMeta: null,
   setMethod: (method) => set((s) => ({ request: { ...s.request, method } })),
   setUrl: (url) => set((s) => ({ request: { ...s.request, url } })),
   setHeaders: (headers) => set((s) => ({ request: { ...s.request, headers } })),
@@ -59,16 +62,17 @@ export const useRequestStore = create<RequestState>((set) => ({
   setAuthToken: (token) => set((s) => ({ request: { ...s.request, authToken: token } })),
   setAuthUser: (user) => set((s) => ({ request: { ...s.request, authUser: user } })),
   setAuthPass: (pass) => set((s) => ({ request: { ...s.request, authPass: pass } })),
-  loadRequest: (req) => {
+  loadRequest: (req, openapiMeta = null) => {
     const key = cacheKey(req)
     const cached = responseCache.get(key)
-    set({ request: req, response: cached?.response ?? null, streamingBody: cached?.streamingBody ?? null, responseTimestamp: cached?.timestamp ?? null, error: null })
+    set({ request: req, openapiMeta, response: cached?.response ?? null, streamingBody: cached?.streamingBody ?? null, responseTimestamp: cached?.timestamp ?? null, error: null })
   },
   resetRequest: () => set({
     request: { ...defaultRequest, headers: defaultHeaders },
     response: null,
     error: null,
     responseTimestamp: null,
+    openapiMeta: null,
   }),
   setResponse: (response) => {
     const req = useRequestStore.getState().request

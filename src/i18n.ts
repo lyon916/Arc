@@ -141,6 +141,13 @@ export const t: Record<Lang, Record<string, string>> = {
     useProxy: 'CORS 代理',
     proxyOn: '代理已启用',
     proxyOff: '代理已关闭',
+    docs: 'Docs',
+    noOpenApiDocs: '此接口未关联 OpenAPI 文档',
+    sync: '同步',
+    syncing: '同步中...',
+    syncedSuccessfully: '同步完成',
+    nItemsSynced: '个接口已更新',
+    syncFailed: '同步失败',
   },
   en: {
     appName: 'Arc',
@@ -282,6 +289,13 @@ export const t: Record<Lang, Record<string, string>> = {
     useProxy: 'CORS Proxy',
     proxyOn: 'Proxy enabled',
     proxyOff: 'Proxy disabled',
+    docs: 'Docs',
+    noOpenApiDocs: 'No OpenAPI documentation linked',
+    sync: 'Sync',
+    syncing: 'Syncing...',
+    syncedSuccessfully: 'Sync complete',
+    nItemsSynced: 'items updated',
+    syncFailed: 'Sync failed',
   },
 }
 

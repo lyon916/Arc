@@ -703,6 +703,7 @@ body {
 @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes pulse-brand { 0%, 100% { box-shadow: 0 0 0 0 rgba(94, 106, 210, 0.4); } 50% { box-shadow: 0 0 0 6px rgba(94, 106, 210, 0); } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .animate-fade-in { animation-name: fadeIn; animation-duration: 300ms; animation-timing-function: ease-out; animation-fill-mode: forwards; }
 .animate-fade-out { animation-name: fadeOut; animation-duration: 120ms; animation-timing-function: ease-in; animation-fill-mode: forwards; }

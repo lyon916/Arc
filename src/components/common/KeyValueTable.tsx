@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import type { KeyValue } from '../../types/api'
 import { useUiStore } from '../../store'
 import { t } from '../../i18n'
+import Tooltip from './Tooltip'
 
 interface Props {
   items: KeyValue[]
@@ -51,14 +52,39 @@ export function KeyValueTable({ items, onChange, keyPlaceholder = 'Key', valuePl
           />
 
           {/* Key input */}
-          <input
-            type="text"
-            className="input-linear flex-1"
-            style={{ fontFamily: 'var(--font-mono)', fontSize: 12, padding: '5px 8px' }}
-            placeholder={keyPlaceholder}
-            value={item.key}
-            onChange={(e) => updateRow(i, 'key', e.target.value)}
-          />
+          <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <input
+              type="text"
+              className="input-linear"
+              style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: 12, padding: '5px 8px' }}
+              placeholder={keyPlaceholder}
+              value={item.key}
+              onChange={(e) => updateRow(i, 'key', e.target.value)}
+            />
+            {item.description && (
+              <Tooltip text={item.description}>
+                <span style={{
+                  position: 'absolute',
+                  right: 6,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-tertiary)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  cursor: 'help',
+                  width: 16,
+                  height: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  background: 'var(--bg-hover)',
+                }}>
+                  ?
+                </span>
+              </Tooltip>
+            )}
+          </div>
 
           {/* Value input */}
           <input
