@@ -404,6 +404,11 @@ export default function WorkspaceTree() {
       showToast(tr('noResults'), 'info')
       return
     }
+
+    // 查重：已有集合中相同 method + url 的请求跳过
+    const existingReqs = await db.workspace.where('type').equals('request').toArray()
+    const seen = new Set(existingReqs.map((r) => `${r.request?.method ?? ''} ${r.request?.url ?? ''}`))
+
     const idMap = new Map<number, number>()
     const folders = items.filter((i) => i.type === 'folder')
     const requests = items.filter((i) => i.type === 'request')
@@ -422,7 +427,14 @@ export default function WorkspaceTree() {
       idMap.set(Number(oldId), newId)
     }
 
+    let skipped = 0
     for (const reqItem of requests) {
+      const key = `${reqItem.request?.method ?? ''} ${reqItem.request?.url ?? ''}`
+      if (seen.has(key)) {
+        skipped++
+        continue
+      }
+      seen.add(key)
       let realParentId: number | null = null
       if (reqItem.parentId !== null) {
         realParentId = idMap.get(reqItem.parentId) ?? null
@@ -439,8 +451,12 @@ export default function WorkspaceTree() {
     }
 
     bumpWorkspace()
-    showToast(tr('importedFromOpenApi'), 'success')
-  }, [showToast, tr, bumpWorkspace])
+    const imported = requests.length - skipped
+    const msg = skipped > 0
+      ? `${tr('importedFromOpenApi')} (${imported})，${skipped} ${lang === 'zh' ? '个重复已跳过' : 'duplicates skipped'}`
+      : `${tr('importedFromOpenApi')} (${imported})`
+    showToast(msg, 'success')
+  }, [showToast, tr, bumpWorkspace, lang])
 
   // 从文件导入
   const handleImportFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
