@@ -589,7 +589,7 @@ export default function WorkspaceTree() {
           { label: <><FilePlus size={14} /> Add Request</>, action: handleContextCreateRequest },
         ]
       : []),
-    { label: <><Download size={14} /> {tr('exportOpenApi')}</>, action: handleContextExport },
+    { label: <><Upload size={14} /> {tr('exportOpenApi')}</>, action: handleContextExport },
     { label: <><Pencil size={14} /> Rename</>, action: handleContextRename },
     { label: <><Trash2 size={14} /> Delete</>, action: handleContextDelete, danger: true },
   ]
@@ -615,7 +615,7 @@ export default function WorkspaceTree() {
           onClick={handleExport}
           title={tr('exportOpenApi')}
         >
-          <Download size={14} />
+          <Upload size={14} />
         </button>
         <button
           className="btn-ghost-linear"
@@ -623,7 +623,7 @@ export default function WorkspaceTree() {
           onClick={() => setShowImportPanel(!showImportPanel)}
           title={tr('importOpenApi')}
         >
-          <Upload size={14} />
+          <Download size={14} />
         </button>
         <input
           ref={fileInputRef}
