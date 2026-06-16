@@ -13,6 +13,7 @@ import {
   Search,
   Upload,
   Download,
+  X,
 } from 'lucide-react'
 import { useRequestStore, useUiStore } from '../../store'
 import type { WorkspaceTreeNode } from '../../hooks/useWorkspace'
@@ -606,8 +607,20 @@ export default function WorkspaceTree() {
             placeholder={tr('searchWorkspace')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ width: '100%', paddingLeft: 28, paddingTop: 6, paddingBottom: 6, fontSize: 12 }}
+            style={{ width: '100%', paddingLeft: 28, paddingRight: searchQuery ? 28 : 8, paddingTop: 6, paddingBottom: 6, fontSize: 12 }}
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+                padding: 2, borderRadius: 4, color: 'var(--text-tertiary)',
+                display: 'flex', alignItems: 'center',
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
         <button
           className="btn-ghost-linear"
