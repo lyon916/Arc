@@ -620,21 +620,27 @@ export default function WorkspaceTree() {
 
   const handleContextDelete = async () => {
     if (!contextMenu) return
-    const id = contextMenu.id
-    const snapshot = await collectDescendants(id)
-    await deleteWorkspaceItem(id)
-    if (selectedIds.has(id)) {
-      const next = new Set(selectedIds)
-      next.delete(id)
-      setSelectedIds(next)
+    // 多选时删除所有选中项，否则只删除右键目标
+    const isMultiSelected = selectedIds.size > 1 && selectedIds.has(contextMenu.id)
+    const idsToDelete = isMultiSelected ? [...selectedIds] : [contextMenu.id]
+
+    // 收集所有待删项及其子孙
+    let allSnapshots: Awaited<ReturnType<typeof collectDescendants>> = []
+    for (const id of idsToDelete) {
+      const snap = await collectDescendants(id)
+      allSnapshots = allSnapshots.concat(snap)
+      await deleteWorkspaceItem(id)
     }
+
+    setSelectedIds(new Set())
     setContextMenu(null)
     load()
-    const label = snapshot.length > 1 ? `已删除 ${snapshot.length} 项` : `已删除"${contextTarget?.name ?? '此项'}"`
+    const count = allSnapshots.length
+    const label = count > 1 ? `已删除 ${count} 项` : `已删除"${contextTarget?.name ?? '此项'}"`
     showToast(label, 'info', {
       label: tr('undo'),
       onClick: async () => {
-        await restoreWorkspaceItems(snapshot)
+        await restoreWorkspaceItems(allSnapshots)
         load()
         showToast(tr('undone'), 'success')
       },
