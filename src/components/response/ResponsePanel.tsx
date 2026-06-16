@@ -24,6 +24,12 @@ function formatSize(bytes: number): string {
   return `${bytes} B`
 }
 
+function formatTime(ts: number): string {
+  const d = new Date(ts)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
@@ -81,6 +87,7 @@ export function ResponsePanel() {
   const loading = useRequestStore((s) => s.loading)
   const request = useRequestStore((s) => s.request)
   const streamingBody = useRequestStore((s) => s.streamingBody)
+  const responseTimestamp = useRequestStore((s) => s.responseTimestamp)
   const showToast = useUiStore((s) => s.showToast)
   const [viewMode, setViewMode] = useState<ViewMode>('pretty')
   const [showFullBody, setShowFullBody] = useState(false)
@@ -260,6 +267,12 @@ export function ResponsePanel() {
         ))}
 
         <div className="flex-1" />
+
+        {responseTimestamp != null && (
+          <span style={{ color: 'var(--text-tertiary)', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+            {formatTime(responseTimestamp)}
+          </span>
+        )}
 
         <span
           className={`px-2 py-0.5 rounded font-weight-590 ${statusClass(response.status)}`}

@@ -542,8 +542,8 @@ export default function WorkspaceTree() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* toolbar */}
-      <div style={{ padding: '4px 4px 6px' }}>
-        <div style={{ position: 'relative' }}>
+      <div style={{ padding: '4px 4px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ position: 'relative', flex: 1 }}>
           <Search size={14} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
           <input
             type="text"
@@ -554,33 +554,29 @@ export default function WorkspaceTree() {
             style={{ width: '100%', paddingLeft: 28, paddingTop: 6, paddingBottom: 6, fontSize: 12 }}
           />
         </div>
-        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-          <button
-            className="btn-ghost-linear"
-            style={{ flex: 1, padding: '4px 8px', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
-            onClick={handleExport}
-            title={tr('exportOpenApi')}
-          >
-            <Download size={13} />
-            {tr('exportOpenApi')}
-          </button>
-          <button
-            className="btn-ghost-linear"
-            style={{ flex: 1, padding: '4px 8px', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
-            onClick={() => fileInputRef.current?.click()}
-            title={tr('importOpenApi')}
-          >
-            <Upload size={13} />
-            {tr('importOpenApi')}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            style={{ display: 'none' }}
-            onChange={handleImportFile}
-          />
-        </div>
+        <button
+          className="btn-ghost-linear"
+          style={{ padding: '5px 7px', display: 'flex', alignItems: 'center' }}
+          onClick={handleExport}
+          title={tr('exportOpenApi')}
+        >
+          <Download size={14} />
+        </button>
+        <button
+          className="btn-ghost-linear"
+          style={{ padding: '5px 7px', display: 'flex', alignItems: 'center' }}
+          onClick={() => fileInputRef.current?.click()}
+          title={tr('importOpenApi')}
+        >
+          <Upload size={14} />
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          style={{ display: 'none' }}
+          onChange={handleImportFile}
+        />
       </div>
 
       {/* tree */}

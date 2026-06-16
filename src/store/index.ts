@@ -11,7 +11,7 @@ const defaultHeaders: KeyValue[] = [
 function cacheKey(req: ApiRequest): string {
   return `${req.method} ${req.url}`
 }
-const responseCache = new Map<string, { response: ApiResponse | null; streamingBody: string | null }>()
+const responseCache = new Map<string, { response: ApiResponse | null; streamingBody: string | null; timestamp: number | null }>()
 
 interface RequestState {
   request: ApiRequest
@@ -19,6 +19,7 @@ interface RequestState {
   loading: boolean
   error: string | null
   streamingBody: string | null
+  responseTimestamp: number | null
   setMethod: (method: HttpMethod) => void
   setUrl: (url: string) => void
   setHeaders: (headers: KeyValue[]) => void
@@ -45,6 +46,7 @@ export const useRequestStore = create<RequestState>((set) => ({
   loading: false,
   error: null,
   streamingBody: null,
+  responseTimestamp: null,
   setMethod: (method) => set((s) => ({ request: { ...s.request, method } })),
   setUrl: (url) => set((s) => ({ request: { ...s.request, url } })),
   setHeaders: (headers) => set((s) => ({ request: { ...s.request, headers } })),
@@ -60,19 +62,21 @@ export const useRequestStore = create<RequestState>((set) => ({
   loadRequest: (req) => {
     const key = cacheKey(req)
     const cached = responseCache.get(key)
-    set({ request: req, response: cached?.response ?? null, streamingBody: cached?.streamingBody ?? null, error: null })
+    set({ request: req, response: cached?.response ?? null, streamingBody: cached?.streamingBody ?? null, responseTimestamp: cached?.timestamp ?? null, error: null })
   },
   resetRequest: () => set({
     request: { ...defaultRequest, headers: defaultHeaders },
     response: null,
     error: null,
+    responseTimestamp: null,
   }),
   setResponse: (response) => {
     const req = useRequestStore.getState().request
+    const now = Date.now()
     if (response) {
-      responseCache.set(cacheKey(req), { response, streamingBody: null })
+      responseCache.set(cacheKey(req), { response, streamingBody: null, timestamp: now })
     }
-    set({ response })
+    set({ response, responseTimestamp: now })
   },
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
@@ -80,7 +84,7 @@ export const useRequestStore = create<RequestState>((set) => ({
     const req = useRequestStore.getState().request
     if (body !== null) {
       const existing = responseCache.get(cacheKey(req))
-      responseCache.set(cacheKey(req), { response: existing?.response ?? null, streamingBody: body })
+      responseCache.set(cacheKey(req), { response: existing?.response ?? null, streamingBody: body, timestamp: existing?.timestamp ?? null })
     }
     set({ streamingBody: body })
   },
