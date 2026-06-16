@@ -26,6 +26,7 @@ import {
   renameWorkspaceItem,
   deleteWorkspaceItem,
   moveWorkspaceItem,
+  moveWorkspaceItems,
   collectDescendants,
   restoreWorkspaceItems,
 } from '../../hooks/useWorkspace'
@@ -96,8 +97,10 @@ function TreeNode({
   setShowContextMenu,
   editingId,
   setEditingId,
-  selectedId,
-  setSelectedId,
+  selectedIds,
+  setSelectedIds,
+  lastClickedIdRef,
+  flatNodes,
   onCreateItem,
 }: {
   node: WorkspaceTreeNode
@@ -111,8 +114,10 @@ function TreeNode({
   setShowContextMenu: (v: { id: number; x: number; y: number } | null) => void
   editingId: number | null
   setEditingId: (id: number | null) => void
-  selectedId: number | null
-  setSelectedId: (id: number | null) => void
+  selectedIds: Set<number>
+  setSelectedIds: React.Dispatch<React.SetStateAction<Set<number>>>
+  lastClickedIdRef: React.MutableRefObject<number | null>
+  flatNodes: WorkspaceTreeNode[]
   onCreateItem: (type: 'folder' | 'request', parentId: number) => void
 }) {
   const loadRequest = useRequestStore((s) => s.loadRequest)
@@ -120,16 +125,23 @@ function TreeNode({
   const [hovering, setHovering] = useState(false)
   const isExpanded = expandedIds.has(node.id!)
   const isEditing = editingId === node.id
-  const isSelected = selectedId === node.id
+  const isSelected = selectedIds.has(node.id!)
   const isDragOver = dragOverId === node.id
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setDragOverId(null)
+    if (node.type === 'request') return
     const data = JSON.parse(e.dataTransfer.getData('text/plain'))
-    if (data.id === node.id || node.type === 'request') return
-    await moveWorkspaceItem(data.id, node.id!, node.children.length)
+    const ids: number[] = data.ids || (data.id ? [data.id] : [])
+    if (!ids.length || ids.includes(node.id!)) return
+    if (ids.length === 1) {
+      await moveWorkspaceItem(ids[0], node.id!, node.children.length)
+    } else {
+      await moveWorkspaceItems(ids, node.id!)
+    }
+    setSelectedIds(new Set())
     onRefresh()
   }
 
@@ -140,7 +152,8 @@ function TreeNode({
 
   const handleMoreClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setSelectedId(node.id!)
+    setSelectedIds(new Set([node.id!]))
+    lastClickedIdRef.current = node.id!
     setShowContextMenu({ id: node.id!, x: e.clientX, y: e.clientY })
   }
 
@@ -157,17 +170,40 @@ function TreeNode({
 
   const handleRowClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (node.type === 'folder') {
-      toggleExpand(node.id!)
-      setSelectedId(node.id!)
-      return
+    const id = node.id!
+
+    if (e.shiftKey && lastClickedIdRef.current != null) {
+      // Shift: 范围选择
+      const startIdx = flatNodes.findIndex((n) => n.id === lastClickedIdRef.current)
+      const endIdx = flatNodes.findIndex((n) => n.id === id)
+      if (startIdx >= 0 && endIdx >= 0) {
+        const [from, to] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx]
+        const range = new Set(selectedIds)
+        for (let i = from; i <= to; i++) range.add(flatNodes[i].id!)
+        setSelectedIds(range)
+      }
+    } else if (e.ctrlKey || e.metaKey) {
+      // Ctrl/Cmd: 切换单个
+      const next = new Set(selectedIds)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      setSelectedIds(next)
+      lastClickedIdRef.current = id
+    } else {
+      // 普通点击
+      if (node.type === 'folder') {
+        toggleExpand(node.id!)
+      }
+      if (selectedIds.has(id) && selectedIds.size === 1 && node.type === 'request') {
+        // 再次点击已选中的 API：取消选中
+        setSelectedIds(new Set())
+        lastClickedIdRef.current = null
+        return
+      }
+      setSelectedIds(new Set([id]))
+      lastClickedIdRef.current = id
+      if (node.request) loadRequest(node.request)
     }
-    if (selectedId === node.id) {
-      setSelectedId(null)
-      return
-    }
-    setSelectedId(node.id!)
-    if (node.request) loadRequest(node.request)
   }
 
   const handleQuickAdd = (e: React.MouseEvent) => {
@@ -182,7 +218,8 @@ function TreeNode({
       <div
         draggable
         onDragStart={(e) => {
-          e.dataTransfer.setData('text/plain', JSON.stringify({ id: node.id }))
+          const dragIds = selectedIds.has(node.id!) ? [...selectedIds] : [node.id!]
+          e.dataTransfer.setData('text/plain', JSON.stringify({ ids: dragIds }))
           setDragging(true)
         }}
         onDragEnd={() => setDragging(false)}
@@ -341,8 +378,10 @@ function TreeNode({
                 setShowContextMenu={setShowContextMenu}
                 editingId={editingId}
                 setEditingId={setEditingId}
-                selectedId={selectedId}
-                setSelectedId={setSelectedId}
+                selectedIds={selectedIds}
+                setSelectedIds={setSelectedIds}
+                lastClickedIdRef={lastClickedIdRef}
+                flatNodes={flatNodes}
                 onCreateItem={onCreateItem}
               />
             ))}
@@ -360,10 +399,21 @@ export default function WorkspaceTree() {
   const [dragOverId, setDragOverId] = useState<number | null>(null)
   const [contextMenu, setContextMenu] = useState<{ id: number; x: number; y: number } | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const lastClickedIdRef = useRef<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showImportPanel, setShowImportPanel] = useState(false)
   const [importUrl, setImportUrl] = useState('')
+
+  // 获取平铺的可见节点列表（用于 Shift 范围选择）
+  function flattenVisible(nodes: WorkspaceTreeNode[]): WorkspaceTreeNode[] {
+    const result: WorkspaceTreeNode[] = []
+    for (const n of nodes) {
+      result.push(n)
+      if (expandedIds.has(n.id!)) result.push(...flattenVisible(n.children))
+    }
+    return result
+  }
 
   const workspaceVersion = useUiStore((s) => s.workspaceVersion)
   const showToast = useUiStore((s) => s.showToast)
@@ -526,6 +576,8 @@ export default function WorkspaceTree() {
     return filterNodes(tree)
   }, [tree, searchQuery])
 
+  const flatNodes = useMemo(() => flattenVisible(filteredTree), [filteredTree, expandedIds])
+
   const handleCreateItem = useCallback(async (type: 'folder' | 'request', parentId: number | null) => {
     let newId: number
     if (type === 'folder') {
@@ -538,7 +590,8 @@ export default function WorkspaceTree() {
     }
     setTree(await loadWorkspaceTree())
     setEditingId(newId)
-    setSelectedId(newId)
+    setSelectedIds(new Set([newId]))
+    lastClickedIdRef.current = newId
   }, [])
 
   const contextTarget = contextMenu ? findNodeById(tree, contextMenu.id) : null
@@ -560,7 +613,8 @@ export default function WorkspaceTree() {
   const handleContextRename = () => {
     if (!contextMenu) return
     setEditingId(contextMenu.id)
-    setSelectedId(contextMenu.id)
+    setSelectedIds(new Set([contextMenu.id]))
+    lastClickedIdRef.current = contextMenu.id
     setContextMenu(null)
   }
 
@@ -569,7 +623,11 @@ export default function WorkspaceTree() {
     const id = contextMenu.id
     const snapshot = await collectDescendants(id)
     await deleteWorkspaceItem(id)
-    if (selectedId === id) setSelectedId(null)
+    if (selectedIds.has(id)) {
+      const next = new Set(selectedIds)
+      next.delete(id)
+      setSelectedIds(next)
+    }
     setContextMenu(null)
     load()
     const label = snapshot.length > 1 ? `已删除 ${snapshot.length} 项` : `已删除"${contextTarget?.name ?? '此项'}"`
@@ -688,7 +746,7 @@ export default function WorkspaceTree() {
       {/* tree */}
       <div
         style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '2px 0' }}
-        onClick={(e) => { if (e.target === e.currentTarget) { setSelectedId(null); setContextMenu(null) } }}
+        onClick={(e) => { if (e.target === e.currentTarget) { setSelectedIds(new Set()); setContextMenu(null) } }}
       >
         {filteredTree.length === 0 && (
           <div style={{
@@ -719,8 +777,10 @@ export default function WorkspaceTree() {
             setShowContextMenu={setContextMenu}
             editingId={editingId}
             setEditingId={setEditingId}
-            selectedId={selectedId}
-            setSelectedId={setSelectedId}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedIds}
+            lastClickedIdRef={lastClickedIdRef}
+            flatNodes={flatNodes}
             onCreateItem={handleCreateItem}
           />
         ))}

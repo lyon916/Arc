@@ -138,6 +138,37 @@ export async function moveWorkspaceItem(
   }
 }
 
+export async function moveWorkspaceItems(
+  ids: number[],
+  targetParentId: number | null,
+): Promise<void> {
+  if (!ids.length) return
+  const target = targetParentId ? await db.workspace.get(targetParentId) : null
+  if (target && target.type !== 'folder') return
+
+  const siblings = await getSiblings(targetParentId)
+  let nextOrder = siblings.length
+
+  for (const id of ids) {
+    const item = await db.workspace.get(id)
+    if (!item) continue
+    if (targetParentId && item.type === 'folder') {
+      const desc = await isDescendantOf(targetParentId, id)
+      if (desc) continue
+    }
+    await db.workspace.update(id, { parentId: targetParentId, order: nextOrder })
+    nextOrder++
+  }
+
+  const updated = await getSiblings(targetParentId)
+  const sorted = updated.sort((a, b) => a.order - b.order)
+  for (let i = 0; i < sorted.length; i++) {
+    if (sorted[i].order !== i) {
+      await db.workspace.update(sorted[i].id!, { order: i })
+    }
+  }
+}
+
 async function isDescendantOf(ancestorId: number, descendantId: number): Promise<boolean> {
   const item = await db.workspace.get(descendantId)
   if (!item || !item.parentId) return false
