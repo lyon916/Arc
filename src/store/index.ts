@@ -141,7 +141,7 @@ const savedLang = (localStorage.getItem('arc-lang') || localStorage.getItem('lig
 const initialLang: Lang = savedLang || (navigator.language.startsWith('zh') ? 'zh' : 'en')
 const savedUseProxy = localStorage.getItem('arc-use-proxy')
 const initialUseProxy = savedUseProxy === 'true'
-document.documentElement.setAttribute('data-theme', savedTheme)
+document.documentElement.setAttribute('data-theme', theme)
 
 let sidebarSaveTimer: ReturnType<typeof setTimeout> | null = null
 
