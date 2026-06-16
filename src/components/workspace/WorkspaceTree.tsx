@@ -11,6 +11,8 @@ import {
   Pencil,
   Trash2,
   Search,
+  Upload,
+  Download,
 } from 'lucide-react'
 import { useRequestStore, useUiStore } from '../../store'
 import type { WorkspaceTreeNode } from '../../hooks/useWorkspace'
@@ -28,6 +30,8 @@ import {
 } from '../../hooks/useWorkspace'
 import ContextMenu from '../common/ContextMenu'
 import Tooltip from '../common/Tooltip'
+import { exportToOpenApi, parseOpenApi } from '../../utils/openapi'
+import { db } from '../../db'
 
 // ---- helpers ----
 
@@ -367,6 +371,89 @@ export default function WorkspaceTree() {
   }, [])
   useEffect(() => { load() }, [workspaceVersion])
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const bumpWorkspace = useUiStore((s) => s.bumpWorkspace)
+
+  // 导出 OpenAPI
+  const handleExport = useCallback(async () => {
+    try {
+      const currentTree = await loadWorkspaceTree()
+      if (currentTree.length === 0) {
+        showToast(tr('noResults'), 'info')
+        return
+      }
+      const json = exportToOpenApi(currentTree)
+      const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'arc-openapi.json'
+      a.click()
+      URL.revokeObjectURL(url)
+      showToast(tr('exportedSuccessfully'), 'success')
+    } catch {
+      showToast(tr('formatError'), 'error')
+    }
+  }, [showToast, tr])
+
+  // 导入 OpenAPI
+  const handleImportFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const text = await file.text()
+      const items = parseOpenApi(text)
+      if (items.length === 0) {
+        showToast(tr('noResults'), 'info')
+        return
+      }
+
+      // 分批插入：先 folder 再 request，重映射 parentId
+      const idMap = new Map<number, number>() // tempId → real DB id
+      const folders = items.filter((i) => i.type === 'folder')
+      const requests = items.filter((i) => i.type === 'request')
+
+      for (const folder of folders) {
+        const newId = await db.workspace.add({
+          uid: folder.uid,
+          name: folder.name,
+          type: 'folder',
+          parentId: null,
+          order: folder.order,
+          createdAt: Date.now(),
+        })
+        idMap.set(folder.uid as unknown as number, newId)
+        // Also map by the index position just in case
+        const oldId = folder.uid.replace('ws-import-', '')
+        idMap.set(Number(oldId), newId)
+      }
+
+      for (const reqItem of requests) {
+        let realParentId: number | null = null
+        if (reqItem.parentId !== null) {
+          realParentId = idMap.get(reqItem.parentId) ?? null
+        }
+        await db.workspace.add({
+          uid: reqItem.uid,
+          name: reqItem.name,
+          type: 'request',
+          parentId: realParentId,
+          order: reqItem.order,
+          request: reqItem.request,
+          createdAt: Date.now(),
+        })
+      }
+
+      bumpWorkspace()
+      showToast(tr('importedFromOpenApi'), 'success')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : tr('formatError')
+      showToast(msg, 'error')
+    }
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [showToast, tr, bumpWorkspace])
+
   const filteredTree = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return tree
@@ -465,6 +552,33 @@ export default function WorkspaceTree() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ width: '100%', paddingLeft: 28, paddingTop: 6, paddingBottom: 6, fontSize: 12 }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+          <button
+            className="btn-ghost-linear"
+            style={{ flex: 1, padding: '4px 8px', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            onClick={handleExport}
+            title={tr('exportOpenApi')}
+          >
+            <Download size={13} />
+            {tr('exportOpenApi')}
+          </button>
+          <button
+            className="btn-ghost-linear"
+            style={{ flex: 1, padding: '4px 8px', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            onClick={() => fileInputRef.current?.click()}
+            title={tr('importOpenApi')}
+          >
+            <Upload size={13} />
+            {tr('importOpenApi')}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            style={{ display: 'none' }}
+            onChange={handleImportFile}
           />
         </div>
       </div>
