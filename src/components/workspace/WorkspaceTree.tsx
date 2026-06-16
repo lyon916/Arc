@@ -361,6 +361,8 @@ export default function WorkspaceTree() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showImportPanel, setShowImportPanel] = useState(false)
+  const [importUrl, setImportUrl] = useState('')
 
   const workspaceVersion = useUiStore((s) => s.workspaceVersion)
   const showToast = useUiStore((s) => s.showToast)
@@ -396,63 +398,79 @@ export default function WorkspaceTree() {
     }
   }, [showToast, tr])
 
-  // 导入 OpenAPI
+  // OpenAPI items → DB (共用)
+  const doImport = useCallback(async (items: ReturnType<typeof parseOpenApi>) => {
+    if (items.length === 0) {
+      showToast(tr('noResults'), 'info')
+      return
+    }
+    const idMap = new Map<number, number>()
+    const folders = items.filter((i) => i.type === 'folder')
+    const requests = items.filter((i) => i.type === 'request')
+
+    for (const folder of folders) {
+      const newId = await db.workspace.add({
+        uid: folder.uid,
+        name: folder.name,
+        type: 'folder',
+        parentId: null,
+        order: folder.order,
+        createdAt: Date.now(),
+      })
+      idMap.set(folder.uid as unknown as number, newId)
+      const oldId = folder.uid.replace('ws-import-', '')
+      idMap.set(Number(oldId), newId)
+    }
+
+    for (const reqItem of requests) {
+      let realParentId: number | null = null
+      if (reqItem.parentId !== null) {
+        realParentId = idMap.get(reqItem.parentId) ?? null
+      }
+      await db.workspace.add({
+        uid: reqItem.uid,
+        name: reqItem.name,
+        type: 'request',
+        parentId: realParentId,
+        order: reqItem.order,
+        request: reqItem.request,
+        createdAt: Date.now(),
+      })
+    }
+
+    bumpWorkspace()
+    showToast(tr('importedFromOpenApi'), 'success')
+  }, [showToast, tr, bumpWorkspace])
+
+  // 从文件导入
   const handleImportFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const text = await file.text()
-      const items = parseOpenApi(text)
-      if (items.length === 0) {
-        showToast(tr('noResults'), 'info')
-        return
-      }
-
-      // 分批插入：先 folder 再 request，重映射 parentId
-      const idMap = new Map<number, number>() // tempId → real DB id
-      const folders = items.filter((i) => i.type === 'folder')
-      const requests = items.filter((i) => i.type === 'request')
-
-      for (const folder of folders) {
-        const newId = await db.workspace.add({
-          uid: folder.uid,
-          name: folder.name,
-          type: 'folder',
-          parentId: null,
-          order: folder.order,
-          createdAt: Date.now(),
-        })
-        idMap.set(folder.uid as unknown as number, newId)
-        // Also map by the index position just in case
-        const oldId = folder.uid.replace('ws-import-', '')
-        idMap.set(Number(oldId), newId)
-      }
-
-      for (const reqItem of requests) {
-        let realParentId: number | null = null
-        if (reqItem.parentId !== null) {
-          realParentId = idMap.get(reqItem.parentId) ?? null
-        }
-        await db.workspace.add({
-          uid: reqItem.uid,
-          name: reqItem.name,
-          type: 'request',
-          parentId: realParentId,
-          order: reqItem.order,
-          request: reqItem.request,
-          createdAt: Date.now(),
-        })
-      }
-
-      bumpWorkspace()
-      showToast(tr('importedFromOpenApi'), 'success')
+      const items = parseOpenApi(await file.text())
+      await doImport(items)
+      setShowImportPanel(false)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : tr('formatError')
-      showToast(msg, 'error')
+      showToast(err instanceof Error ? err.message : tr('formatError'), 'error')
     }
-    // Reset file input
     if (fileInputRef.current) fileInputRef.current.value = ''
-  }, [showToast, tr, bumpWorkspace])
+  }, [showToast, tr, doImport])
+
+  // 从 URL 导入
+  const handleUrlImport = useCallback(async () => {
+    const url = importUrl.trim()
+    if (!url) return
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+      const items = parseOpenApi(await res.text())
+      await doImport(items)
+      setImportUrl('')
+      setShowImportPanel(false)
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : tr('formatError'), 'error')
+    }
+  }, [importUrl, showToast, tr, doImport])
 
   const filteredTree = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -565,7 +583,7 @@ export default function WorkspaceTree() {
         <button
           className="btn-ghost-linear"
           style={{ padding: '5px 7px', display: 'flex', alignItems: 'center' }}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => setShowImportPanel(!showImportPanel)}
           title={tr('importOpenApi')}
         >
           <Upload size={14} />
@@ -578,6 +596,43 @@ export default function WorkspaceTree() {
           onChange={handleImportFile}
         />
       </div>
+
+      {/* Import panel */}
+      {showImportPanel && (
+        <div style={{ padding: '0 4px 6px' }}>
+          <div className="slab-subtle" style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <input
+                type="text"
+                className="input-linear"
+                placeholder={tr('openApiUrlPlaceholder')}
+                value={importUrl}
+                onChange={(e) => setImportUrl(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleUrlImport() }}
+                style={{ flex: 1, paddingTop: 5, paddingBottom: 5, fontSize: 11 }}
+              />
+              <button
+                className="btn-brand"
+                style={{ padding: '4px 10px', fontSize: 11, fontWeight: 510 }}
+                onClick={handleUrlImport}
+                disabled={!importUrl.trim()}
+              >
+                {tr('import_')}
+              </button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>or</span>
+              <button
+                className="btn-ghost-linear"
+                style={{ padding: '3px 8px', fontSize: 11 }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {tr('importFromFile')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* tree */}
       <div
