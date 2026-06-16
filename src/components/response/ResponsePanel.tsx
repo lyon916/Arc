@@ -28,6 +28,7 @@ export function ResponsePanel() {
   const response = useRequestStore((s) => s.response)
   const error = useRequestStore((s) => s.error)
   const loading = useRequestStore((s) => s.loading)
+  const request = useRequestStore((s) => s.request)
   const streamingBody = useRequestStore((s) => s.streamingBody)
   const showToast = useUiStore((s) => s.showToast)
   const [viewMode, setViewMode] = useState<ViewMode>('pretty')
@@ -60,7 +61,7 @@ export function ResponsePanel() {
     ? response!.body.slice(0, LARGE_BODY_THRESHOLD) + '\n\n… 响应体过大，已截断显示'
     : response?.body || ''
 
-  if (loading && !streamingBody) {
+  if (loading && streamingBody == null) {
     return (
       <div className="flex items-center justify-center h-full animate-fade-in">
         <svg width="32" height="32" viewBox="0 0 32 32" className="animate-spin" style={{ color: 'var(--accent-brand)' }}>
@@ -110,17 +111,45 @@ export function ResponsePanel() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full animate-fade-in">
+      <div className="flex flex-col items-center justify-center h-full gap-4 animate-fade-in" style={{ padding: '32px 24px' }}>
         <div
-          className="px-4 py-3 rounded-md max-w-lg text-sm"
           style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-standard)',
-            color: 'var(--status-error)',
+            width: 48, height: 48, borderRadius: '50%',
+            background: 'var(--accent-brand-light)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          {error}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--status-error)" strokeWidth="1.5" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
         </div>
+
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 590, marginBottom: 4 }}>
+            {tr('requestFailed')}
+          </p>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>
+            {error}
+          </p>
+        </div>
+
+        <div
+          className="code-block px-4 py-2.5"
+          style={{
+            fontSize: 11,
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <span className={`font-weight-590 method-${request.method.toLowerCase()}`}>{request.method}</span>
+          {' '}
+          <span style={{ color: 'var(--text-tertiary)', wordBreak: 'break-all' }}>{request.url}</span>
+        </div>
+
+        <p style={{ color: 'var(--text-muted)', fontSize: 11, textAlign: 'center', maxWidth: 360 }}>
+          {tr('networkError')}
+        </p>
       </div>
     )
   }

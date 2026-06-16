@@ -32,10 +32,11 @@ export async function executeSend(): Promise<void> {
     if (autoSave) executeSave({ silent: true })
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') return
-    const message = err instanceof TypeError && err.message.includes('Failed to fetch')
-      ? tr('networkError')
-      : err instanceof Error ? err.message : tr('unknownError')
-    setResponse({ status: 0, statusText: 'Error', headers: {}, body: message, size: new Blob([message]).size, duration: 0 })
+    const message = err instanceof Error ? err.message : String(err)
+    const friendly = message.includes('Failed to fetch') || message.includes('NetworkError')
+      ? tr('cannotConnect')
+      : message
+    setError(friendly)
   } finally {
     setLoading(false)
     currentController = null
