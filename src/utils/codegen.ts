@@ -6,9 +6,13 @@ function buildUrl(req: ApiRequest): string {
   const params = enabledItems(req.queryParams)
   if (!req.url) return ''
   if (params.length === 0) return req.url
-  const url = new URL(req.url)
-  for (const p of params) url.searchParams.append(p.key, p.value)
-  return url.toString()
+  try {
+    const url = new URL(req.url)
+    for (const p of params) url.searchParams.append(p.key, p.value)
+    return url.toString()
+  } catch {
+    return req.url
+  }
 }
 
 function buildHeaders(req: ApiRequest): Record<string, string> {
