@@ -24,6 +24,57 @@ function formatSize(bytes: number): string {
   return `${bytes} B`
 }
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 590,
+          color: 'var(--text-primary)',
+          padding: '6px 0',
+          borderBottom: '2px solid var(--border-standard)',
+          marginBottom: 2,
+        }}
+      >
+        {title}
+      </div>
+      <div className="flex flex-col">{children}</div>
+    </div>
+  )
+}
+
+function HeaderRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="flex gap-3 py-1.5 text-xs"
+      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+    >
+      <span
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontWeight: 510,
+          color: 'var(--text-secondary)',
+          minWidth: 160,
+          flexShrink: 0,
+          wordBreak: 'break-all',
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          fontFamily: 'var(--font-mono)',
+          color: 'var(--text-tertiary)',
+          wordBreak: 'break-all',
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  )
+}
+
 export function ResponsePanel() {
   const response = useRequestStore((s) => s.response)
   const error = useRequestStore((s) => s.error)
@@ -281,17 +332,30 @@ export function ResponsePanel() {
         )}
 
         {viewMode === 'headers' && (
-          <div className="flex flex-col gap-1">
-            {Object.entries(response.headers).map(([key, value]) => (
-              <div
-                key={key}
-                className="flex gap-2 py-1.5 px-2 text-xs"
-                style={{ borderBottom: '1px solid var(--border-subtle)' }}
-              >
-                <span className="json-key font-weight-510" style={{ fontFamily: 'var(--font-mono)' }}>{key}</span>
-                <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{value}</span>
-              </div>
-            ))}
+          <div className="flex flex-col gap-3">
+            {/* General */}
+            <Section title={tr('general')}>
+              <HeaderRow label="Request URL" value={request.url} />
+              <HeaderRow label="Request Method" value={request.method} />
+              <HeaderRow label="Status Code" value={`${response.status} ${response.statusText}`} />
+            </Section>
+
+            {/* Response Headers */}
+            <Section title={tr('responseHeaders')}>
+              {Object.entries(response.headers).map(([key, value]) => (
+                <HeaderRow key={key} label={key} value={value} />
+              ))}
+            </Section>
+
+            {/* Request Headers */}
+            <Section title={tr('requestHeaders')}>
+              {request.headers.filter(h => h.enabled && h.key).map((h) => (
+                <HeaderRow key={h.key} label={h.key} value={h.value} />
+              ))}
+              {request.headers.filter(h => h.enabled && h.key).length === 0 && (
+                <div style={{ color: 'var(--text-muted)', fontSize: 11, padding: '8px 0' }}>—</div>
+              )}
+            </Section>
           </div>
         )}
         </div>
