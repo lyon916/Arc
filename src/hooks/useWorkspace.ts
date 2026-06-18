@@ -60,6 +60,7 @@ export async function addWorkspaceFolder(name: string, parentId: number | null):
     parentId,
     order: await getNextOrder(parentId),
     createdAt: Date.now(),
+    updated_at: Date.now(),
   })
 }
 
@@ -72,11 +73,12 @@ export async function addWorkspaceRequest(name: string, request: WorkspaceItem['
     order: await getNextOrder(parentId),
     request,
     createdAt: Date.now(),
+    updated_at: Date.now(),
   })
 }
 
 export async function renameWorkspaceItem(id: number, name: string): Promise<void> {
-  await db.workspace.update(id, { name })
+  await db.workspace.update(id, { name, updated_at: Date.now() })
 }
 
 export async function deleteWorkspaceItem(id: number): Promise<void> {
@@ -122,7 +124,7 @@ export async function moveWorkspaceItem(
   }
 
   // 更新目标项
-  await db.workspace.update(id, { parentId: newParentId, order: newOrder })
+  await db.workspace.update(id, { parentId: newParentId, order: newOrder, updated_at: Date.now() })
 
   // 重排同级顺序
   const siblings = await getSiblings(newParentId)
@@ -156,7 +158,7 @@ export async function moveWorkspaceItems(
       const desc = await isDescendantOf(targetParentId, id)
       if (desc) continue
     }
-    await db.workspace.update(id, { parentId: targetParentId, order: nextOrder })
+    await db.workspace.update(id, { parentId: targetParentId, order: nextOrder, updated_at: Date.now() })
     nextOrder++
   }
 
@@ -164,7 +166,7 @@ export async function moveWorkspaceItems(
   const sorted = updated.sort((a, b) => a.order - b.order)
   for (let i = 0; i < sorted.length; i++) {
     if (sorted[i].order !== i) {
-      await db.workspace.update(sorted[i].id!, { order: i })
+      await db.workspace.update(sorted[i].id!, { order: i, updated_at: Date.now() })
     }
   }
 }
@@ -200,5 +202,6 @@ export async function saveRequestToWorkspace(
     order: await getNextOrder(targetId),
     request,
     createdAt: Date.now(),
+    updated_at: Date.now(),
   })
 }

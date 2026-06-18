@@ -228,3 +228,39 @@ export const useUiStore = create<UiState>((set, get) => ({
   showToast: (message, type = 'info', action, duration) => set({ toast: { message, type, action, duration } }),
   clearToast: () => set({ toast: null }),
 }))
+
+// ---- Auth State ----
+
+export interface UserInfo {
+  id: string
+  email?: string
+  nickname?: string
+  avatar?: string
+  plan?: string
+}
+
+export type SyncStatus = 'idle' | 'syncing' | 'error' | 'ok'
+
+interface AuthState {
+  user: UserInfo | null
+  sessionToken: string | null
+  syncStatus: SyncStatus
+  authModalOpen: boolean
+  setUser: (user: UserInfo | null) => void
+  setSession: (token: string | null) => void
+  setSyncStatus: (status: SyncStatus) => void
+  setAuthModalOpen: (open: boolean) => void
+  logout: () => void
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  sessionToken: null,
+  syncStatus: 'idle',
+  authModalOpen: false,
+  setUser: (user) => set({ user }),
+  setSession: (token) => set({ sessionToken: token }),
+  setSyncStatus: (status) => set({ syncStatus: status }),
+  setAuthModalOpen: (open) => set({ authModalOpen: open }),
+  logout: () => set({ user: null, sessionToken: null, syncStatus: 'idle' }),
+}))

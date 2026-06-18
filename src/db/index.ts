@@ -6,6 +6,7 @@ export interface HistoryRecord {
   request: ApiRequest
   response: ApiResponse
   createdAt: number
+  updated_at?: number
 }
 
 export interface EnvRecord {
@@ -14,6 +15,7 @@ export interface EnvRecord {
   variables: KeyValue[]
   headers: KeyValue[]
   isActive: boolean
+  updated_at?: number
 }
 
 export interface OpenApiMeta {
@@ -32,6 +34,7 @@ export interface WorkspaceItem {
   order: number
   request?: ApiRequest
   createdAt: number
+  updated_at?: number
   openapiMeta?: OpenApiMeta
 }
 

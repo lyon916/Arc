@@ -3,6 +3,8 @@ import { Plus } from 'lucide-react'
 import { useUiStore, useRequestStore, THEME_LIST } from '../../store'
 import EnvSelector from '../env/EnvSelector'
 import CodeGenerator from '../common/CodeGenerator'
+import { UserMenu } from '../auth/UserMenu'
+import { AuthModal } from '../auth/AuthModal'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { t } from '../../i18n'
 
@@ -144,6 +146,8 @@ export function Navbar() {
 
           <EnvSelector />
 
+          <UserMenu />
+
           <button
             className="btn-ghost-linear"
             style={{ padding: isMobile ? undefined : '4px 10px', height: isMobile ? 26 : undefined, fontSize: 13 }}
@@ -166,6 +170,7 @@ export function Navbar() {
       </div>
 
       <CodeGenerator open={showCodegen} onClose={() => setShowCodegen(false)} />
+      <AuthModal />
     </>
   )
 }

@@ -14,11 +14,12 @@ export async function saveHistory(record: HistoryRecord): Promise<number> {
     await db.history.update(existingId, {
       response: record.response,
       createdAt: Date.now(),
+      updated_at: Date.now(),
     })
     return existingId
   }
 
-  return db.history.add(record)
+  return db.history.add({ ...record, updated_at: Date.now() })
 }
 
 export async function loadHistory(): Promise<HistoryRecord[]> {

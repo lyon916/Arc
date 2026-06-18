@@ -2,11 +2,11 @@ import { db, type EnvRecord } from '../db'
 import type { KeyValue } from '../types/api'
 
 export async function addEnv(name: string, variables: KeyValue[] = [], headers: KeyValue[] = []): Promise<number> {
-  return db.environments.add({ name, variables, headers, isActive: false })
+  return db.environments.add({ name, variables, headers, isActive: false, updated_at: Date.now() })
 }
 
 export async function updateEnv(id: number, data: Partial<Pick<EnvRecord, 'name' | 'variables' | 'headers'>>) {
-  return db.environments.update(id, data)
+  return db.environments.update(id, { ...data, updated_at: Date.now() })
 }
 
 export async function deleteEnv(id: number) {
