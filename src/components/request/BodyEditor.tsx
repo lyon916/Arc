@@ -26,8 +26,8 @@ export function BodyEditor() {
 
   return (
     <div className="flex flex-col gap-2 animate-fade-in">
-      {/* Type selector */}
-      <div className="flex gap-0">
+      {/* Type selector + format button */}
+      <div className="flex gap-0 items-center">
         {bodyTypes.map((bt) => (
           <button
             key={bt.value}
@@ -37,6 +37,17 @@ export function BodyEditor() {
             {bt.label}
           </button>
         ))}
+        {request.bodyType === 'json' && bodyJson.trim() && (
+          <button
+            className="btn-ghost-linear"
+            style={{ fontSize: 11, padding: '2px 8px', marginLeft: 'auto', marginRight: 8 }}
+            onClick={() => {
+              try { setBodyJson(JSON.stringify(JSON.parse(bodyJson), null, 2)) } catch { /* ignore */ }
+            }}
+          >
+            {tr('format')}
+          </button>
+        )}
       </div>
 
       {/* JSON */}
@@ -50,27 +61,12 @@ export function BodyEditor() {
             onChange={(e) => setBodyJson(e.target.value)}
             spellCheck={false}
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {(() => {
-              if (!bodyJson.trim()) return null
-              try { JSON.parse(bodyJson); return null } catch {
-                return <span style={{ color: 'var(--status-error)', fontSize: 11 }}>{tr('jsonError')}</span>
-              }
-            })()}
-            {bodyJson.trim() && (
-              <button
-                className="btn-ghost-linear"
-                style={{ fontSize: 11, padding: '2px 8px', marginLeft: 'auto' }}
-                onClick={() => {
-                  try {
-                    setBodyJson(JSON.stringify(JSON.parse(bodyJson), null, 2))
-                  } catch { /* ignore */ }
-                }}
-              >
-                {tr('format')}
-              </button>
-            )}
-          </div>
+          {(() => {
+            if (!bodyJson.trim()) return null
+            try { JSON.parse(bodyJson); return null } catch {
+              return <div style={{ color: 'var(--status-error)', fontSize: 11 }}>{tr('jsonError')}</div>
+            }
+          })()}
         </div>
       )}
 

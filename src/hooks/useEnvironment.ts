@@ -1,11 +1,11 @@
 import { db, type EnvRecord } from '../db'
 import type { KeyValue } from '../types/api'
 
-export async function addEnv(name: string, variables: KeyValue[] = []): Promise<number> {
-  return db.environments.add({ name, variables, isActive: false })
+export async function addEnv(name: string, variables: KeyValue[] = [], headers: KeyValue[] = []): Promise<number> {
+  return db.environments.add({ name, variables, headers, isActive: false })
 }
 
-export async function updateEnv(id: number, data: Partial<Pick<EnvRecord, 'name' | 'variables'>>) {
+export async function updateEnv(id: number, data: Partial<Pick<EnvRecord, 'name' | 'variables' | 'headers'>>) {
   return db.environments.update(id, data)
 }
 
@@ -25,6 +25,10 @@ export async function getAllEnvs(): Promise<EnvRecord[]> {
 export async function activateEnv(id: number) {
   await db.environments.filter((e) => e.isActive).modify({ isActive: false })
   await db.environments.update(id, { isActive: true })
+}
+
+export async function deactivateEnv() {
+  await db.environments.filter((e) => e.isActive).modify({ isActive: false })
 }
 
 export { replaceEnvVars } from '../utils/envVars'

@@ -18,8 +18,17 @@ export async function sendRequest(request: ApiRequest, signal?: AbortSignal): Pr
     value: replaceEnvVars(p.value, vars),
   })))
 
-  // Build headers (filter disabled + env replace + auth)
+  // Build headers (env global headers → request headers → auth)
   const headers: Record<string, string> = {}
+
+  // 1. Env global headers (base layer)
+  for (const h of activeEnv?.headers || []) {
+    if (h.enabled && h.key) {
+      headers[replaceEnvVars(h.key, vars)] = replaceEnvVars(h.value, vars)
+    }
+  }
+
+  // 2. Request-specific headers (override env headers)
   for (const h of request.headers) {
     if (h.enabled && h.key) {
       headers[replaceEnvVars(h.key, vars)] = replaceEnvVars(h.value, vars)

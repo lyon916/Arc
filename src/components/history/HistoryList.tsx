@@ -36,7 +36,7 @@ export function HistoryList({ records, loading, onReplay, onDelete }: Props) {
     onReplay(r)
   }
 
-  if (loading) {
+  if (loading && records.length === 0) {
     return (
       <div style={{
         display: 'flex',

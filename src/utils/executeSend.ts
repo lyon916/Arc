@@ -24,7 +24,6 @@ export async function executeSend(): Promise<void> {
 
   setLoading(true)
   setError(null)
-  setResponse(null)
   setStreamingBody(null)
   try {
     const response = await sendRequest(request, currentController.signal)

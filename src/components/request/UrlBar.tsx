@@ -161,9 +161,10 @@ export function UrlBar() {
         className={`btn-ghost-linear flex items-center justify-center ${useProxy ? 'ring-2' : ''}`}
         style={{
           flexShrink: 0,
-          width: isMobile ? 28 : 32,
-          height: isMobile ? 28 : 32,
+          width: isMobile ? 48 : 52,
+          height: isMobile ? 30 : 46,
           padding: 0,
+          border: '1px solid var(--border-subtle)',
           color: useProxy ? 'var(--accent-brand)' : 'var(--text-muted)',
           borderRadius: 'var(--radius-md)',
           transition: 'color var(--transition-normal)',

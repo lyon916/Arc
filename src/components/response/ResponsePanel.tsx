@@ -119,7 +119,7 @@ export function ResponsePanel() {
     ? response!.body.slice(0, LARGE_BODY_THRESHOLD) + tr('largeBodyHint')
     : response?.body || ''
 
-  if (loading && streamingBody == null) {
+  if (loading && streamingBody == null && !response) {
     return (
       <div className="flex items-center justify-center h-full animate-fade-in">
         <svg width="32" height="32" viewBox="0 0 32 32" className="animate-spin" style={{ color: 'var(--accent-brand)' }}>

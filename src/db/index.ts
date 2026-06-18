@@ -12,6 +12,7 @@ export interface EnvRecord {
   id?: number
   name: string
   variables: KeyValue[]
+  headers: KeyValue[]
   isActive: boolean
 }
 

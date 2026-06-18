@@ -54,9 +54,10 @@ function parseBaseUrl(url: string): { base: string; path: string } {
   try {
     const u = new URL(url)
     const base = `${u.protocol}//${u.host}`
-    return { base, path: u.pathname + u.search }
+    return { base, path: u.pathname }
   } catch {
-    return { base: 'http://localhost', path: url.startsWith('/') ? url : '/' + url }
+    const clean = url.split('?')[0]
+    return { base: 'http://localhost', path: clean.startsWith('/') ? clean : '/' + clean }
   }
 }
 
@@ -64,6 +65,20 @@ function buildUrl(base: string, path: string): string {
   const b = base.endsWith('/') ? base.slice(0, -1) : base
   const p = path.startsWith('/') ? path : '/' + path
   return b + p
+}
+
+function extractQueryFromPath(path: string): { cleanPath: string; queryParams: KeyValue[] } {
+  const idx = path.indexOf('?')
+  if (idx === -1) return { cleanPath: path, queryParams: [] }
+  const search = path.slice(idx)
+  const params: KeyValue[] = []
+  try {
+    const sp = new URLSearchParams(search)
+    for (const [key, value] of sp) {
+      params.push({ key, value, enabled: true })
+    }
+  } catch { /* ignore malformed */ }
+  return { cleanPath: path.slice(0, idx), queryParams: params }
 }
 
 function enabledKv(list: KeyValue[]): KeyValue[] {
@@ -199,7 +214,13 @@ export function parseOpenApi(json: string, defaultBaseUrl?: string, sourceUrl?: 
   }
 
   // Process paths
-  for (const [path, methods] of Object.entries(spec.paths || {})) {
+  for (const [rawPath, methods] of Object.entries(spec.paths || {})) {
+    // Collect path-level parameters (shared across all operations on this path)
+    const pathLevelParams: OpenApiParameter[] = (methods as any).parameters || []
+
+    // Extract query params baked into the path itself (from bad specs / older exports)
+    const { cleanPath, queryParams: pathQueryParams } = extractQueryFromPath(rawPath)
+
     for (const [method, op] of Object.entries(methods)) {
       if (['parameters', 'servers', 'summary', 'description'].includes(method)) continue
       const upperMethod = method.toUpperCase()
@@ -207,7 +228,7 @@ export function parseOpenApi(json: string, defaultBaseUrl?: string, sourceUrl?: 
 
       const req: ApiRequest = { ...defaultRequest, headers: [] }
       req.method = upperMethod as ApiRequest['method']
-      req.url = buildUrl(baseUrl, path)
+      req.url = buildUrl(baseUrl, cleanPath)
 
       // Tags → folder grouping
       let parentId: number | null = null
@@ -230,24 +251,38 @@ export function parseOpenApi(json: string, defaultBaseUrl?: string, sourceUrl?: 
         }
       }
 
-      // Parameters
+      // Query params extracted from the path URL itself
+      for (const qp of pathQueryParams) {
+        if (!req.queryParams.some((r) => r.key === qp.key)) {
+          req.queryParams.push(qp)
+        }
+      }
+
+      // Parameters — merge path-level first, then operation-level (op overrides)
       const paramDescriptions: Record<string, string> = {}
-      if (op.parameters) {
-        for (const p of op.parameters) {
-          const val = p.example !== undefined ? String(p.example) : (p.schema?.default !== undefined ? String(p.schema.default) : '')
-          if (p.in === 'query') {
-            // Don't add duplicates
-            if (!req.queryParams.some((qp) => qp.key === p.name)) {
-              req.queryParams.push({ key: p.name, value: val, enabled: true, description: p.description })
-            }
-          } else if (p.in === 'header') {
-            if (!req.headers.some((h) => h.key === p.name)) {
-              req.headers.push({ key: p.name, value: val, enabled: true, description: p.description })
-            }
+      const allParams = [...pathLevelParams, ...(op.parameters || [])]
+      for (const p of allParams) {
+        const val = p.example !== undefined ? String(p.example) : (p.schema?.default !== undefined ? String(p.schema.default) : '')
+        if (p.in === 'query') {
+          // Override existing (path-level or URL-query) with operation-level value
+          const existing = req.queryParams.find((qp) => qp.key === p.name)
+          if (existing) {
+            existing.value = val
+            if (p.description) existing.description = p.description
+          } else {
+            req.queryParams.push({ key: p.name, value: val, enabled: true, description: p.description })
           }
-          if (p.description) {
-            paramDescriptions[p.name] = p.description
+        } else if (p.in === 'header') {
+          const existing = req.headers.find((h) => h.key === p.name)
+          if (existing) {
+            existing.value = val
+            if (p.description) existing.description = p.description
+          } else {
+            req.headers.push({ key: p.name, value: val, enabled: true, description: p.description })
           }
+        }
+        if (p.description) {
+          paramDescriptions[p.name] = p.description
         }
       }
 
@@ -299,7 +334,7 @@ export function parseOpenApi(json: string, defaultBaseUrl?: string, sourceUrl?: 
 
       items.push({
         uid: `ws-import-req-${batchId}-${items.length}`,
-        name: (op.summary || op.operationId || `${method.toUpperCase()} ${path}`).slice(0, 100),
+        name: (op.summary || op.operationId || `${method.toUpperCase()} ${cleanPath}`).slice(0, 100),
         type: 'request',
         parentId,
         order: items.length,

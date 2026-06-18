@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useRequestStore, useUiStore } from '../../store'
 import type { WorkspaceTreeNode } from '../../hooks/useWorkspace'
+import type { KeyValue } from '../../types/api'
 import { useExpandSet } from '../../hooks/useExpandSet'
 import { t } from '../../i18n'
 import {
@@ -627,13 +628,33 @@ export default function WorkspaceTree() {
           const origin = new URL(sourceUrl).origin
           const newItems = parseOpenApi(await res.text(), origin, sourceUrl)
 
-          // Build new spec index: method+url → spec item
+          // Normalize URL for matching: strip query string so old imports
+          // (where query was baked into URL) still match the new clean URL
+          const normalizeUrl = (url: string) => { try { const u = new URL(url); return `${u.protocol}//${u.host}${u.pathname}` } catch { return url.split('?')[0] } }
+
+          // Build new spec index: method+normalizedUrl → spec item
           const newSpecIndex = new Map<string, typeof newItems[0]>()
           for (const item of newItems) {
             if (item.type === 'request' && item.request) {
-              const key = `${item.request.method} ${item.request.url}`
+              const key = `${item.request.method} ${normalizeUrl(item.request.url)}`
               newSpecIndex.set(key, item)
             }
+          }
+
+          // Helper: extract query params from URL and clean it
+          const cleanUrlQuery = (url: string, qp: KeyValue[]) => {
+            try {
+              const u = new URL(url)
+              if (!u.search) return { url, qp }
+              const sp = new URLSearchParams(u.search)
+              const existingKeys = new Set(qp.map(p => p.key))
+              for (const [key, value] of sp) {
+                if (!existingKeys.has(key)) {
+                  qp.push({ key, value, enabled: true })
+                }
+              }
+              return { url: `${u.protocol}//${u.host}${u.pathname}`, qp }
+            } catch { return { url, qp } }
           }
 
           // Update existing items that match this source (either by openapiMeta.sourceUrl
@@ -648,42 +669,56 @@ export default function WorkspaceTree() {
 
             if (!belongsToSource) continue
 
-            const key = `${existing.request.method} ${existing.request.url}`
-            const specItem = newSpecIndex.get(key)
-            if (!specItem || !specItem.request) continue
-
-            // Merge: update name, openapiMeta, param/header descriptions
             const updatedReq = { ...existing.request }
 
-            // Update param descriptions from new spec
-            const newParams = specItem.request.queryParams
-            for (const np of newParams) {
-              if (!np.description) continue
-              const idx = updatedReq.queryParams.findIndex((p) => p.key === np.key)
-              if (idx >= 0) {
-                updatedReq.queryParams[idx] = { ...updatedReq.queryParams[idx], description: np.description }
-              } else {
-                updatedReq.queryParams.push(np)
-              }
-            }
+            // Always clean URL: extract baked-in query params into queryParams
+            const cleaned = cleanUrlQuery(updatedReq.url, [...updatedReq.queryParams])
+            updatedReq.url = cleaned.url
+            updatedReq.queryParams = cleaned.qp
 
-            // Update header descriptions from new spec
-            const newHeaders = specItem.request.headers
-            for (const nh of newHeaders) {
-              if (!nh.description) continue
-              const idx = updatedReq.headers.findIndex((h) => h.key === nh.key)
-              if (idx >= 0) {
-                updatedReq.headers[idx] = { ...updatedReq.headers[idx], description: nh.description }
-              } else {
-                updatedReq.headers.push(nh)
-              }
-            }
+            const key = `${existing.request.method} ${normalizeUrl(updatedReq.url)}`
+            const specItem = newSpecIndex.get(key)
 
-            await db.workspace.update(existing.id!, {
-              name: specItem.name,
-              request: updatedReq,
-              openapiMeta: specItem.openapiMeta,
-            })
+            if (specItem?.request) {
+              // Full merge with spec
+              updatedReq.url = specItem.request.url
+
+              for (const np of specItem.request.queryParams) {
+                const idx = updatedReq.queryParams.findIndex((p) => p.key === np.key)
+                if (idx >= 0) {
+                  updatedReq.queryParams[idx] = {
+                    ...updatedReq.queryParams[idx],
+                    value: np.value || updatedReq.queryParams[idx].value,
+                    ...(np.description ? { description: np.description } : {}),
+                  }
+                } else {
+                  updatedReq.queryParams.push(np)
+                }
+              }
+
+              for (const nh of specItem.request.headers) {
+                const idx = updatedReq.headers.findIndex((h) => h.key === nh.key)
+                if (idx >= 0) {
+                  updatedReq.headers[idx] = {
+                    ...updatedReq.headers[idx],
+                    ...(nh.description ? { description: nh.description } : {}),
+                  }
+                } else {
+                  updatedReq.headers.push(nh)
+                }
+              }
+
+              await db.workspace.update(existing.id!, {
+                name: specItem.name,
+                request: updatedReq,
+                openapiMeta: specItem.openapiMeta,
+              })
+            } else {
+              // No spec match — just save the cleaned URL
+              await db.workspace.update(existing.id!, {
+                request: updatedReq,
+              })
+            }
             totalUpdated++
           }
         } catch (err) {
