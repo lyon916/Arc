@@ -29,10 +29,10 @@
 - **🛡 内置 CORS 代理** — 一键切换。请求通过开源的 [Cloudflare Worker](./worker/) 转发 — 无日志、无存储，30 秒即可自部署。
 - **HTTP 请求构造器** — GET / POST / PUT / DELETE / PATCH / HEAD / OPTIONS，支持 Query Params、Headers、Body（JSON / FormData / Raw）
 - **认证方式** — Bearer Token、Basic Auth
-- **OpenAPI 导入导出** — 从文件或 URL 导入 OpenAPI 规范到集合；将任意文件夹或 API 导出为 OpenAPI JSON。右键文件夹即可直接导入。自动去重跳过重复接口。
+- **OpenAPI 导入、导出与同步** — 从文件或 URL 导入 OpenAPI 规范到集合；将任意文件夹或 API 导出为 OpenAPI JSON。一键同步从源 URL 更新所有已导入的请求。右键文件夹即可直接导入。自动去重跳过重复接口。
 - **SSE 流式显示** — 实时展示服务端推送事件，流式时间戳
 - **响应查看器** — Chrome DevTools 风格的 Headers 面板、语法高亮响应体（格式化/原始）、响应缓存、耗时显示
-- **环境变量** — 多环境 `{{变量名}}` 语法，快速切换
+- **环境变量** — 多环境 `{{变量名}}` 语法，支持全局 Headers、快速切换、双击重命名、激活/取消激活
 - **集合管理** — 保存和整理请求，支持文件夹分组、Shift 多选、批量拖拽、右键删除
 - **请求历史** — 自动保存到本地 IndexedDB，可搜索、可撤销
 - **cURL 导入** — 粘贴 cURL 命令即可填充请求
