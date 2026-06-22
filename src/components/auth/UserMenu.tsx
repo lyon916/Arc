@@ -23,6 +23,7 @@ export function UserMenu() {
   const setAuthModalOpen = useAuthStore((s) => s.setAuthModalOpen)
   const lang = useUiStore((s) => s.lang)
   const tr = (key: string) => t[lang]?.[key] ?? key
+  const showToast = useUiStore((s) => s.showToast)
   const { logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -100,7 +101,7 @@ export function UserMenu() {
             <button
               className="btn-ghost-linear"
               style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', fontSize: 12 }}
-              onClick={() => { setMenuOpen(false); logout() }}
+              onClick={() => { setMenuOpen(false); logout(); showToast(tr('logoutSuccess'), 'success') }}
             >
               <LogOut size={14} />
               {tr('logout')}

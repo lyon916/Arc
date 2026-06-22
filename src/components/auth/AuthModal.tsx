@@ -40,8 +40,10 @@ export function AuthModal() {
     if (result.ok) {
       setStep('code')
       setCountdown(60)
+      showToast(`${tr('codeSentTo')} ${email.trim()}`, 'success')
     } else {
       setError(result.message || tr('sendCodeFailed'))
+      showToast(result.message || tr('sendCodeFailed'), 'error')
     }
   }
 
@@ -57,6 +59,7 @@ export function AuthModal() {
       showToast(tr('loginSuccess'), 'success')
     } else {
       setError(result.message || tr('verifyCodeFailed'))
+      showToast(result.message || tr('verifyCodeFailed'), 'error')
     }
   }
 
@@ -147,9 +150,6 @@ export function AuthModal() {
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                 {tr('codeSentTo')} <strong>{email}</strong>
               </p>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 510, marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                {tr('verificationCode')}
-              </label>
               <input
                 ref={inputRef}
                 type="text"
