@@ -12,7 +12,7 @@ function getApiBase(): string {
     const custom = localStorage.getItem('arc-api-base')
     if (custom) return custom.replace(/\/$/, '')
   } catch { /* ignore */ }
-  return 'https://api.arcapi.xyz'
+  return 'http://161.118.220.202:8787'
 }
 
 let sessionToken: string | null = null
