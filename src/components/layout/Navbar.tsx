@@ -81,6 +81,8 @@ export function Navbar() {
             </button>
           )}
 
+          <UserMenu />
+
           <a
             href="https://github.com/lyon916/Arc"
             target="_blank"
@@ -145,8 +147,6 @@ export function Navbar() {
           </div>
 
           <EnvSelector />
-
-          <UserMenu />
 
           <button
             className="btn-ghost-linear"
