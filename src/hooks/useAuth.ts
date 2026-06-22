@@ -64,7 +64,11 @@ export function useAuth() {
       if (e.origin !== new URL(url).origin) return
       if (e.data?.type === 'arc-oauth' && e.data?.session && e.data?.user) {
         setSession(e.data.session)
-        useAuthStore.setState({ sessionToken: e.data.session, user: e.data.user })
+        useAuthStore.setState({
+          sessionToken: e.data.session,
+          user: e.data.user,
+          authModalOpen: false,
+        })
         w?.close()
         window.removeEventListener('message', onMessage)
       }

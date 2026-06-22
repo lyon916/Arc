@@ -99,10 +99,10 @@ export function UserMenu() {
             </div>
             <button
               className="btn-ghost-linear"
-              style={{ width: '100%', justifyContent: 'flex-start', padding: '6px 12px', fontSize: 12 }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', fontSize: 12 }}
               onClick={() => { setMenuOpen(false); logout() }}
             >
-              <LogOut size={14} style={{ marginRight: 8 }} />
+              <LogOut size={14} />
               {tr('logout')}
             </button>
           </div>

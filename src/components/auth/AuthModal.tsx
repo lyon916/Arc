@@ -9,6 +9,7 @@ export function AuthModal() {
   const open = useAuthStore((s) => s.authModalOpen)
   const setOpen = useAuthStore((s) => s.setAuthModalOpen)
   const lang = useUiStore((s) => s.lang)
+  const showToast = useUiStore((s) => s.showToast)
   const tr = (key: string) => t[lang]?.[key] ?? key
 
   const { sendCode, loginWithCode, startOAuth } = useAuth()
@@ -53,6 +54,7 @@ export function AuthModal() {
     if (result.ok) {
       setOpen(false)
       reset()
+      showToast(tr('loginSuccess'), 'success')
     } else {
       setError(result.message || tr('verifyCodeFailed'))
     }
@@ -112,10 +114,10 @@ export function AuthModal() {
                 ) : countdown > 0 ? (
                   `${tr('resendIn')} ${countdown}s`
                 ) : (
-                  <>
-                    <Mail size={14} style={{ marginRight: 6 }} />
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Mail size={14} />
                     {tr('sendCode')}
-                  </>
+                  </span>
                 )}
               </button>
 

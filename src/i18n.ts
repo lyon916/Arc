@@ -90,6 +90,7 @@ export const t: Record<Lang, Record<string, string>> = {
     selectOrCreateEnv: '请选择或创建一个环境',
     // Auth & Sync
     login: '登录',
+    loginSuccess: '登录成功',
     logout: '登出',
     emailAddress: '邮箱地址',
     sendCode: '发送验证码',
@@ -257,6 +258,7 @@ export const t: Record<Lang, Record<string, string>> = {
     selectOrCreateEnv: 'Select or create an environment',
     // Auth & Sync
     login: 'Login',
+    loginSuccess: 'Login successful',
     logout: 'Logout',
     emailAddress: 'Email Address',
     sendCode: 'Send Code',
