@@ -88,7 +88,7 @@ export function Sidebar({ forceTab }: { forceTab?: 'history' | 'workspace' }) {
           <button
             className="btn-brand"
             style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 510, padding: '13px 9px', borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
-            onClick={() => { resetRequest(); setSidebarTab('workspace'); showToast(tr('newBlankRequest'), 'info')}}
+            onClick={() => { resetRequest(); setSidebarTab('workspace'); showToast(tr('newBlankRequest'), 'info'); setTimeout(() => document.getElementById('url-input')?.focus()) }}
           >
             <Plus size={14} />
             {tr('newRequest')}

@@ -75,7 +75,7 @@ export function Navbar() {
             <button
               className="btn-brand flex items-center justify-center"
               style={{ padding: '0 8px', height: 26, minWidth: 26 }}
-              onClick={() => { resetRequest(); showToast(tr('newBlankRequest'), 'info') }}
+              onClick={() => { resetRequest(); showToast(tr('newBlankRequest'), 'info'); setTimeout(() => document.getElementById('url-input')?.focus()) }}
             >
               <Plus size={14} />
             </button>
