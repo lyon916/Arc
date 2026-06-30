@@ -4,7 +4,7 @@ import { executeSave } from '../../utils/executeSave'
 import { HTTP_METHODS } from '../../utils/shared'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Save, ChevronDown, Send, Shield } from 'lucide-react'
+import { Save, ChevronDown, ChevronUp, Send, Shield } from 'lucide-react'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { t } from '../../i18n'
 
@@ -26,13 +26,18 @@ export function UrlBar() {
   const loading = useRequestStore((s) => s.loading)
   const autoSave = useUiStore((s) => s.autoSave)
   const setAutoSave = useUiStore((s) => s.setAutoSave)
+  const showToast = useUiStore((s) => s.showToast)
   const useProxy = useUiStore((s) => s.useProxy)
   const setUseProxy = useUiStore((s) => s.setUseProxy)
-  const showToast = useUiStore((s) => s.showToast)
+  const proxyUrl = useUiStore((s) => s.proxyUrl)
+  const setProxyUrl = useUiStore((s) => s.setProxyUrl)
   const lang = useUiStore((s) => s.lang)
   const tr = (key: string) => t[lang]?.[key] ?? key
   const methodBtnRef = useRef<HTMLDivElement>(null)
   const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0 })
+  const [proxyExpanded, setProxyExpanded] = useState(false)
+  const proxyResettingRef = useRef(false)
+  const proxyBeforeRef = useRef(proxyUrl)
 
   // Close method dropdown on click outside
   useEffect(() => {
@@ -157,27 +162,111 @@ export function UrlBar() {
 
       {sendBtn}
 
-      <button
-        className={`btn-ghost-linear flex items-center justify-center ${useProxy ? 'ring-2' : ''}`}
-        style={{
-          flexShrink: 0,
-          width: isMobile ? 48 : 52,
-          height: isMobile ? 30 : 46,
-          padding: 0,
-          border: '1px solid var(--border-subtle)',
-          color: useProxy ? 'var(--accent-brand)' : 'var(--text-muted)',
-          borderRadius: 'var(--radius-md)',
-          transition: 'color var(--transition-normal)',
-        }}
-        onClick={() => {
-          const next = !useProxy
-          setUseProxy(next)
-          showToast(tr(next ? 'proxyOn' : 'proxyOff'), 'info', undefined, 2000)
-        }}
-        title={tr('useProxy')}
-      >
-        <Shield size={isMobile ? 14 : 16} />
-      </button>
+      {/* Proxy controls */}
+      <div style={{ display: 'flex', flexShrink: 0 }}>
+        <button
+          className={`btn-ghost-linear flex items-center justify-center ${useProxy ? 'ring-2' : ''}`}
+          style={{
+            paddingLeft: isMobile ? 8 : 13,
+            paddingRight: isMobile ? 8 : 13,
+            color: useProxy ? 'var(--accent-brand)' : 'var(--text-muted)',
+            transition: 'color var(--transition-normal)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-md)',
+            borderTopRightRadius: 0,
+            borderBottomRightRadius: 0,
+          }}
+          title={tr('useProxy')}
+          onClick={() => {
+            const next = !useProxy
+            setUseProxy(next)
+            showToast(tr(next ? 'proxyOn' : 'proxyOff'), 'info', undefined, 2000)
+          }}
+        >
+          <Shield size={isMobile ? 14 : 16} />
+        </button>
+
+        <div
+          className="dropdown dropdown-end"
+          style={{ display: 'flex' }}
+          onFocusCapture={() => setProxyExpanded(true)}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setProxyExpanded(false)
+            }
+          }}
+        >
+          <button
+            tabIndex={0}
+            role="button"
+            className="btn-ghost-linear flex items-center justify-center"
+            style={{
+              width: isMobile ? 22 : 28,
+              border: '1px solid var(--border-subtle)',
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+              borderLeft: 'none',
+            }}
+          >
+            {proxyExpanded ? <ChevronUp size={isMobile ? 12 : 15} /> : <ChevronDown size={isMobile ? 12 : 15} />}
+          </button>
+          <div
+            tabIndex={0}
+            className="dropdown-content"
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-standard)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+              zIndex: 9999,
+              width: 250,
+              padding: 8,
+              top: '100%',
+              marginTop: 4,
+            }}
+          >
+            <input
+              key={proxyUrl}
+              type="text"
+              className="input-linear"
+              style={{ width: '100%', fontSize: 12, height: 32 }}
+              placeholder={tr('proxyUrlPlaceholder')}
+              defaultValue={proxyUrl}
+              onBlur={(e) => {
+                if (proxyResettingRef.current) {
+                  proxyResettingRef.current = false
+                  return
+                }
+                const v = e.target.value
+                setProxyUrl(v)
+                if (v !== proxyBeforeRef.current) {
+                  proxyBeforeRef.current = v
+                  showToast(tr('proxyUrlSaved'), 'info', undefined, 2000)
+                }
+              }}
+            />
+            <button
+              className="btn-ghost-linear"
+              style={{
+                width: '100%', fontSize: 12, marginTop: 8,
+                padding: '6px 0', borderRadius: 'var(--radius-md)',
+                color: 'var(--text-secondary)',
+              }}
+              onClick={(e) => {
+                e.preventDefault()
+                proxyResettingRef.current = true
+                const defaultUrl = 'https://proxy.arcapi.xyz'
+                setProxyUrl(defaultUrl)
+                proxyBeforeRef.current = defaultUrl
+                showToast(tr('resetProxyUrl'), 'info', undefined, 2000)
+                setProxyExpanded(false)
+              }}
+            >
+              {tr('resetProxyUrl')}
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div style={{ display: 'flex', flexShrink: 0 }}>
         <button

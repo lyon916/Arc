@@ -633,6 +633,20 @@ body {
 .method-head-bg { background: var(--method-head); color: white; opacity: 0.8; }
 .method-options-bg { background: var(--method-options); color: white; opacity: 0.8; }
 
+.method-get-bg,
+.method-post-bg,
+.method-put-bg,
+.method-delete-bg,
+.method-patch-bg,
+.method-head-bg,
+.method-options-bg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  text-align: center;
+}
+
 /* ===== Custom Component Classes ===== */
 .slab { background: var(--bg-surface); border: 1px solid var(--border-standard); border-radius: var(--radius-lg); }
 .slab-subtle { background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
@@ -717,6 +731,7 @@ body {
 /* Dropdown / popup unified appear + disappear transitions */
 .dropdown .dropdown-content {
   display: flex !important;            /* override DaisyUI display:none so transitions work */
+  flex-direction: column;
   opacity: 0 !important;
   visibility: hidden;
   transform: scale(0.95);

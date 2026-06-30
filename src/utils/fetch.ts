@@ -1,10 +1,10 @@
 import type { ApiRequest, ApiResponse, KeyValue } from '../types/api'
 import { buildAuthHeader } from './authHeaders'
 import { replaceEnvVars } from './envVars'
+import { normalizeUrl } from './shared'
 import { saveHistory } from '../hooks/useHistory'
 import { useRequestStore, useUiStore } from '../store'
 
-const PROXY_URL = 'https://proxy.arcapi.xyz'
 
 export async function sendRequest(request: ApiRequest, signal?: AbortSignal): Promise<ApiResponse> {
   // Env var replacement
@@ -62,9 +62,9 @@ export async function sendRequest(request: ApiRequest, signal?: AbortSignal): Pr
 
   const start = performance.now()
 
-  // Route through CORS proxy if enabled
-  const useProxy = useUiStore.getState().useProxy
-  const fetchUrl = useProxy ? `${PROXY_URL}/?url=${encodeURIComponent(url)}` : url
+  // Route through CORS proxy if enabled (skip for LAN/localhost — proxy can't reach private IPs)
+  const useProxy = useUiStore.getState().useProxy && !isPrivateUrl(url)
+  const fetchUrl = useProxy ? `${useUiStore.getState().proxyUrl}/?url=${encodeURIComponent(url)}` : url
 
   const res = await fetch(fetchUrl, {
     method: request.method,
@@ -126,8 +126,27 @@ export async function sendRequest(request: ApiRequest, signal?: AbortSignal): Pr
   return response
 }
 
+/** Skip proxy for localhost, 127.*, 10.*, 172.16-31.*, 192.168.* — Cloudflare can't reach them */
+function isPrivateUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname
+    if (hostname === 'localhost' || hostname === '[::1]') return true
+    // IPv4 private ranges
+    if (/^127\./.test(hostname)) return true
+    if (/^10\./.test(hostname)) return true
+    if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return true
+    if (/^192\.168\./.test(hostname)) return true
+    // 169.254.x.x link-local
+    if (/^169\.254\./.test(hostname)) return true
+    return false
+  } catch {
+    return false
+  }
+}
+
 function buildUrl(baseUrl: string, params: KeyValue[]): string {
   if (!baseUrl) return ''
+  baseUrl = normalizeUrl(baseUrl)
 
   const enabledParams = params.filter((p) => p.enabled && p.key)
   if (enabledParams.length === 0) return baseUrl

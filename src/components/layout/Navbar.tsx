@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react'
-import { Plus } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Plus, Settings, ChevronRight } from 'lucide-react'
 import { useUiStore, useRequestStore, THEME_LIST } from '../../store'
-import EnvSelector from '../env/EnvSelector'
 import CodeGenerator from '../common/CodeGenerator'
 import { UserMenu } from '../auth/UserMenu'
 import { AuthModal } from '../auth/AuthModal'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { t } from '../../i18n'
+import EnvModal from '../env/EnvModal'
+import { getAllEnvs, activateEnv, deactivateEnv } from '../../hooks/useEnvironment'
+import type { EnvRecord } from '../../db'
 
 export function Navbar() {
   const isMobile = useIsMobile()
@@ -19,13 +21,24 @@ export function Navbar() {
   const lang = useUiStore((s) => s.lang)
   const setLang = useUiStore((s) => s.setLang)
   const [showCodegen, setShowCodegen] = useState(false)
-
+  const [hoveredMenu, setHoveredMenu] = useState<string | null>(null)
+  const hoverTimerRef = useRef<number>(0)
+  const [envs, setEnvs] = useState<EnvRecord[]>([])
+  const [envModalOpen, setEnvModalOpen] = useState(false)
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [])
 
-  const currentTheme = THEME_LIST.find((t) => t.name === theme)
   const tr = (key: string) => t[lang]?.[key] ?? key
+
+  const handleMenuEnter = (menu: string) => {
+    clearTimeout(hoverTimerRef.current)
+    setHoveredMenu(menu)
+  }
+
+  const handleMenuLeave = () => {
+    hoverTimerRef.current = window.setTimeout(() => setHoveredMenu(null), 100)
+  }
 
   return (
     <>
@@ -96,58 +109,6 @@ export function Navbar() {
             </svg>
           </a>
 
-          <div className="dropdown dropdown-end">
-            <button
-              tabIndex={0}
-              role="button"
-              className="btn-ghost-linear"
-              style={{ padding: isMobile ? '0 5px' : '4px 10px', height: isMobile ? 26 : undefined, fontSize: 13, display: 'flex', alignItems: 'center', gap: '4px' }}
-              title={tr('theme')}
-            >
-              <span>{currentTheme?.icon}</span>
-              {!isMobile && <span style={{ fontSize: '12px', fontFeatureSettings: '"cv01", "ss03"' }}>{currentTheme?.label}</span>}
-            </button>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu p-1 hide-scrollbar theme-dropdown"
-              style={{
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-standard)',
-                borderRadius: 'var(--radius-lg)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-                zIndex: 100,
-                minWidth: '180px',
-                maxHeight: '360px',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <div style={{ overflowY: 'auto', scrollbarWidth: 'none', overscrollBehavior: 'contain', flex: 1 }}>
-              {THEME_LIST.map((t) => (
-                <li key={t.name}>
-                  <a
-                    onClick={() => { setTheme(t.name); (document.activeElement as HTMLElement)?.blur() }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '8px 10px', borderRadius: 'var(--radius-sm)',
-                      background: theme === t.name ? 'var(--accent-brand-light)' : 'transparent',
-                      color: theme === t.name ? 'var(--accent-brand-hover)' : 'var(--text-secondary)',
-                      fontWeight: theme === t.name ? 510 : 400,
-                      fontSize: '13px', fontFeatureSettings: '"cv01", "ss03"',
-                    }}
-                  >
-                    <span style={{ fontSize: '14px' }}>{t.icon}</span>
-                    <span>{t.label}</span>
-                    <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: t.preview, border: '1px solid var(--border-strong)', marginLeft: 'auto' }} />
-                  </a>
-                </li>
-              ))}
-              </div>
-            </ul>
-          </div>
-
-          <EnvSelector />
-
           <button
             className="btn-ghost-linear"
             style={{ padding: isMobile ? undefined : '4px 10px', height: isMobile ? 26 : undefined, fontSize: 13 }}
@@ -157,19 +118,257 @@ export function Navbar() {
             {'</>'}
           </button>
 
-          {/* Language toggle */}
-          <button
-            className="btn-ghost-linear"
-            style={{ padding: isMobile ? '0 5px' : '4px 8px', height: isMobile ? 26 : undefined, fontSize: 12, fontWeight: 590 }}
-            onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
-            title={String(tr('switchLang'))}
-          >
-            {lang === 'zh' ? tr('langEn') : tr('langZh')}
-          </button>
+          <div className="dropdown dropdown-end">
+            <button
+              tabIndex={0}
+              role="button"
+              className="btn-ghost-linear"
+              style={{ padding: isMobile ? '0 5px' : '4px 8px', height: isMobile ? 26 : undefined, display: 'flex', alignItems: 'center' }}
+              title={tr('settings')}
+            >
+              <Settings size={isMobile ? 16 : 18} />
+            </button>
+            <div
+              tabIndex={0}
+              className="dropdown-content hide-scrollbar"
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-standard)',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                zIndex: 100,
+                width: 200,
+                padding: '4px 0',
+              }}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setTimeout(() => setHoveredMenu(null), 150)
+                }
+              }}
+            >
+              {/* Language */}
+              <div
+                style={{ position: 'relative' }}
+                onMouseEnter={() => handleMenuEnter('lang')}
+                onMouseLeave={handleMenuLeave}
+              >
+                <button
+                  className="btn-ghost-linear"
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '8px 12px', fontSize: 13, borderRadius: 0, border: 'none',
+                    color: 'var(--text-primary)', fontWeight: 400,
+                  }}
+                >
+                  <span>{tr('language')}</span>
+                  <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
+                </button>
+                {hoveredMenu === 'lang' && (
+                  <div
+                    style={{
+                      position: 'absolute', right: '100%', top: 0,
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-standard)',
+                      borderRadius: 'var(--radius-lg)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                      zIndex: 101,
+                      width: 140,
+                      padding: '4px 0',
+                    }}
+                    onMouseEnter={() => handleMenuEnter('lang')}
+                    onMouseLeave={handleMenuLeave}
+                  >
+                    <button
+                      className="btn-ghost-linear"
+                      style={{
+                        display: 'flex', alignItems: 'center', width: '100%',
+                        padding: '8px 12px', fontSize: 13, borderRadius: 0, border: 'none',
+                        background: lang === 'zh' ? 'var(--accent-brand-light)' : 'transparent',
+                        color: lang === 'zh' ? 'var(--accent-brand)' : 'var(--text-primary)',
+                        fontWeight: lang === 'zh' ? 510 : 400,
+                      }}
+                      onClick={() => {
+                        setLang('zh')
+                        showToast(tr('languageChanged'), 'info', undefined, 2000)
+                        ;(document.activeElement as HTMLElement)?.blur()
+                      }}
+                    >
+                      <span>{tr('langZh')}</span>
+                      {lang === 'zh' && <span style={{ marginLeft: 'auto', fontSize: 13 }}>&#10003;</span>}
+                    </button>
+                    <button
+                      className="btn-ghost-linear"
+                      style={{
+                        display: 'flex', alignItems: 'center', width: '100%',
+                        padding: '8px 12px', fontSize: 13, borderRadius: 0, border: 'none',
+                        background: lang === 'en' ? 'var(--accent-brand-light)' : 'transparent',
+                        color: lang === 'en' ? 'var(--accent-brand)' : 'var(--text-primary)',
+                        fontWeight: lang === 'en' ? 510 : 400,
+                      }}
+                      onClick={() => {
+                        setLang('en')
+                        showToast(tr('languageChanged'), 'info', undefined, 2000)
+                        ;(document.activeElement as HTMLElement)?.blur()
+                      }}
+                    >
+                      <span>{tr('langEn')}</span>
+                      {lang === 'en' && <span style={{ marginLeft: 'auto', fontSize: 13 }}>&#10003;</span>}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: 0 }} />
+
+              {/* Environment */}
+              <div
+                style={{ position: 'relative' }}
+                onMouseEnter={() => {
+                  handleMenuEnter('env')
+                  if (envs.length === 0) getAllEnvs().then(setEnvs)
+                }}
+                onMouseLeave={handleMenuLeave}
+              >
+                <button
+                  className="btn-ghost-linear"
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '8px 12px', fontSize: 13, borderRadius: 0, border: 'none',
+                    color: 'var(--text-primary)', fontWeight: 400,
+                  }}
+                >
+                  <span>{tr('environment')}</span>
+                  <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
+                </button>
+                {hoveredMenu === 'env' && (
+                  <div
+                    style={{
+                      position: 'absolute', right: '100%', top: 0,
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-standard)',
+                      borderRadius: 'var(--radius-lg)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                      zIndex: 101,
+                      width: 180,
+                      padding: '4px 0',
+                    }}
+                    onMouseEnter={() => handleMenuEnter('env')}
+                    onMouseLeave={handleMenuLeave}
+                  >
+                    {envs.length === 0 ? (
+                      <div style={{ padding: '6px 12px', fontSize: 12, color: 'var(--text-tertiary)' }}>{tr('noEnv')}</div>
+                    ) : (
+                      envs.map((env) => (
+                        <button
+                          key={env.id}
+                          className="btn-ghost-linear"
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            width: '100%', padding: '8px 12px', fontSize: 13, borderRadius: 0, border: 'none',
+                            color: env.isActive ? 'var(--accent-brand)' : 'var(--text-secondary)',
+                            fontWeight: env.isActive ? 510 : 400,
+                          }}
+                          onClick={async () => {
+                            if (env.isActive) {
+                              await deactivateEnv()
+                            } else {
+                              await activateEnv(env.id!)
+                            }
+                            const all = await getAllEnvs()
+                            setEnvs(all)
+                            showToast(tr('envSwitched'), 'info')
+                            ;(document.activeElement as HTMLElement)?.blur()
+                          }}
+                        >
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{env.name}</span>
+                          {env.isActive && <span style={{ fontSize: 10, color: 'var(--status-success)', fontWeight: 510, marginLeft: 4, flexShrink: 0 }}>&#9679;</span>}
+                        </button>
+                      ))
+                    )}
+                    <button
+                      className="btn-ghost-linear"
+                      style={{
+                        width: '100%', padding: '4px 12px', fontSize: 11,
+                        color: 'var(--text-muted)', borderRadius: 0, border: 'none', marginTop: 4,
+                      }}
+                      onClick={() => setEnvModalOpen(true)}
+                    >
+                      {tr('envManagement')}...
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: 0 }} />
+
+              {/* Theme */}
+              <div
+                style={{ position: 'relative' }}
+                onMouseEnter={() => handleMenuEnter('theme')}
+                onMouseLeave={handleMenuLeave}
+              >
+                <button
+                  className="btn-ghost-linear"
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '8px 12px', fontSize: 13, borderRadius: 0, border: 'none',
+                    color: 'var(--text-primary)', fontWeight: 400,
+                  }}
+                >
+                  <span>{tr('theme')}</span>
+                  <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
+                </button>
+                {hoveredMenu === 'theme' && (
+                  <div
+                    style={{
+                      position: 'absolute', right: '100%', top: 0,
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-standard)',
+                      borderRadius: 'var(--radius-lg)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                      zIndex: 101,
+                      width: 220,
+                      padding: '4px 0',
+                    }}
+                    onMouseEnter={() => handleMenuEnter('theme')}
+                    onMouseLeave={handleMenuLeave}
+                  >
+                    <div style={{ maxHeight: 240, overflowY: 'auto', overflowX: 'hidden', padding: '0 0 4px' }}>
+                      {THEME_LIST.map((item) => (
+                        <button
+                          key={item.name}
+                          className="btn-ghost-linear"
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                            padding: '8px 12px', borderRadius: 0, border: 'none',
+                            background: theme === item.name ? 'var(--accent-brand-light)' : 'transparent',
+                            color: theme === item.name ? 'var(--accent-brand-hover)' : 'var(--text-secondary)',
+                            fontWeight: theme === item.name ? 510 : 400, fontSize: 13,
+                          }}
+                          onClick={() => {
+                            setTheme(item.name)
+                            showToast(tr('themeChanged'), 'info', undefined, 2000)
+                            ;(document.activeElement as HTMLElement)?.blur()
+                          }}
+                        >
+                          <span style={{ fontSize: 14 }}>{item.icon}</span>
+                          <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
+                          <span style={{ width: 12, height: 12, borderRadius: 3, background: item.preview, border: '1px solid var(--border-strong)' }} />
+                          {theme === item.name && <span style={{ marginLeft: 4, fontSize: 13, color: 'var(--accent-brand)' }}>&#10003;</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
       <CodeGenerator open={showCodegen} onClose={() => setShowCodegen(false)} />
+      <EnvModal open={envModalOpen} onClose={() => { setEnvModalOpen(false); getAllEnvs().then(setEnvs) }} />
       <AuthModal />
     </>
   )

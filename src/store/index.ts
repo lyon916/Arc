@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { ApiRequest, ApiResponse, HttpMethod, BodyType, KeyValue, AuthType } from '../types/api'
-import { defaultRequest } from '../utils/shared'
+import { defaultRequest, normalizeUrl } from '../utils/shared'
 import type { Lang } from '../i18n'
 import type { OpenApiMeta } from '../db'
 
@@ -51,7 +51,7 @@ export const useRequestStore = create<RequestState>((set) => ({
   responseTimestamp: null,
   openapiMeta: null,
   setMethod: (method) => set((s) => ({ request: { ...s.request, method } })),
-  setUrl: (url) => set((s) => ({ request: { ...s.request, url } })),
+  setUrl: (url) => set((s) => ({ request: { ...s.request, url: normalizeUrl(url) } })),
   setHeaders: (headers) => set((s) => ({ request: { ...s.request, headers } })),
   setBodyType: (type) => set((s) => ({ request: { ...s.request, bodyType: type } })),
   setBodyJson: (json) => set((s) => ({ request: { ...s.request, bodyJson: json } })),
@@ -147,6 +147,10 @@ const savedLang = (localStorage.getItem('arc-lang') || localStorage.getItem('lig
 const initialLang: Lang = savedLang || (navigator.language.startsWith('zh') ? 'zh' : 'en')
 const savedUseProxy = localStorage.getItem('arc-use-proxy')
 const initialUseProxy = savedUseProxy === 'true'
+const defaultProxyUrl = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+  ? 'http://localhost:8787'
+  : 'https://proxy.arcapi.xyz'
+const savedProxyUrl = localStorage.getItem('arc-proxy-url') || defaultProxyUrl
 document.documentElement.setAttribute('data-theme', theme)
 
 let sidebarSaveTimer: ReturnType<typeof setTimeout> | null = null
@@ -160,8 +164,11 @@ interface UiState {
   autoSave: boolean
   lang: Lang
   useProxy: boolean
+  proxyUrl: string
   historyVersion: number
   workspaceVersion: number
+  requestCollapsed: boolean
+  preCollapseRatio: number
   setSidebarOpen: (open: boolean) => void
   setSidebarWidth: (width: number) => void
   setSplitRatio: (ratio: number) => void
@@ -170,6 +177,8 @@ interface UiState {
   setAutoSave: (on: boolean) => void
   setLang: (lang: Lang) => void
   setUseProxy: (on: boolean) => void
+  setProxyUrl: (url: string) => void
+  setRequestCollapsed: (collapsed: boolean) => void
   toast: ToastState | null
   bumpHistory: () => void
   bumpWorkspace: () => void
@@ -186,8 +195,11 @@ export const useUiStore = create<UiState>((set, get) => ({
   autoSave: savedAutoSave,
   lang: initialLang,
   useProxy: initialUseProxy,
+  proxyUrl: savedProxyUrl,
   historyVersion: 0,
   workspaceVersion: 0,
+  requestCollapsed: false,
+  preCollapseRatio: 0.4,
   toast: null,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setSidebarWidth: (width) => {
@@ -223,6 +235,16 @@ export const useUiStore = create<UiState>((set, get) => ({
     localStorage.setItem('arc-use-proxy', String(on))
     set({ useProxy: on })
   },
+  setProxyUrl: (url) => {
+    localStorage.setItem('arc-proxy-url', url)
+    set({ proxyUrl: url })
+  },
+  setRequestCollapsed: (collapsed) => set((s) => {
+    if (collapsed) {
+      return { requestCollapsed: true, preCollapseRatio: s.splitRatio, splitRatio: 0.25 }
+    }
+    return { requestCollapsed: false, splitRatio: s.preCollapseRatio }
+  }),
   bumpHistory: () => set((s) => ({ historyVersion: s.historyVersion + 1 })),
   bumpWorkspace: () => set((s) => ({ workspaceVersion: s.workspaceVersion + 1 })),
   showToast: (message, type = 'info', action, duration) => set({ toast: { message, type, action, duration } }),
