@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronUp, ChevronDown } from 'lucide-react'
 import { UrlBar } from './UrlBar'
 import { HeadersEditor } from './HeadersEditor'
 import { ParamsEditor } from './ParamsEditor'
@@ -16,6 +17,8 @@ export function RequestPanel() {
   const isMobile = useIsMobile()
   const [activeTab, setActiveTab] = useState<TabName>('Headers')
   const lang = useUiStore((s) => s.lang)
+  const requestCollapsed = useUiStore((s) => s.requestCollapsed)
+  const setRequestCollapsed = useUiStore((s) => s.setRequestCollapsed)
   const tr = (key: string) => t[lang]?.[key] ?? key
 
   return (
@@ -36,6 +39,14 @@ export function RequestPanel() {
             {tr(tab.toLowerCase())}
           </button>
         ))}
+        <button
+          onClick={() => setRequestCollapsed(!requestCollapsed)}
+          className="tab-linear"
+          style={{ marginLeft: 'auto' }}
+          title={requestCollapsed ? 'Expand' : 'Collapse'}
+        >
+          {requestCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+        </button>
       </div>
 
       {/* Tab content */}

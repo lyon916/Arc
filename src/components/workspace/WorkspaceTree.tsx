@@ -20,6 +20,7 @@ import { useRequestStore, useUiStore } from '../../store'
 import type { WorkspaceTreeNode } from '../../hooks/useWorkspace'
 import type { KeyValue } from '../../types/api'
 import { useExpandSet } from '../../hooks/useExpandSet'
+import { cleanUrlDisplay } from '../../utils/shared'
 import { t } from '../../i18n'
 import {
   loadWorkspaceTree,
@@ -304,6 +305,7 @@ function TreeNode({
               lineHeight: 1.4,
               whiteSpace: 'nowrap',
               flexShrink: 0,
+              marginRight: 2,
             }}
           >
             {node.request?.method || 'REQ'}
@@ -327,7 +329,7 @@ function TreeNode({
                   lineHeight: `${ROW_HEIGHT}px`,
                 }}
               >
-                {node.name}
+                {node.type === 'request' ? cleanUrlDisplay(node.name) : node.name}
               </span>
             </Tooltip>
           </span>

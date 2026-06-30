@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import type { HistoryRecord } from '../../db'
 import Tooltip from '../common/Tooltip'
-import { methodLower, statusClass } from '../../utils/shared'
+import { cleanUrlDisplay, methodLower, statusClass } from '../../utils/shared'
 import { useUiStore } from '../../store'
 import { t } from '../../i18n'
 
@@ -67,7 +67,7 @@ export function HistoryItem({ record, selected, onClick, onDelete }: Props) {
               display: 'block',
             }}
           >
-            {request.url || tr('noUrl')}
+            {cleanUrlDisplay(request.url || '') || tr('noUrl')}
           </span>
         </Tooltip>
       </div>

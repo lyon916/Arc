@@ -21,6 +21,29 @@ export function statusClass(status: number): string {
   return ''
 }
 
+/** 修复 URL 中多余的连续斜杠（保留协议中的 ://） */
+export function normalizeUrl(raw: string): string {
+  if (!raw) return ''
+  const match = raw.match(/^(https?:\/\/)(.*)$/i)
+  if (!match) {
+    // No protocol — just collapse multiple slashes everywhere
+    return raw.replace(/\/{2,}/g, '/')
+  }
+  return match[1] + match[2].replace(/\/{2,}/g, '/')
+}
+
+/** 从 URL 字符串中提取干净的路径显示（去掉协议、主机、前导斜杠） */
+export function cleanUrlDisplay(raw: string): string {
+  if (!raw) return ''
+  let cleaned = raw.replace(/^https?:\/\//, '').replace(/^\/+/, '')
+  const slash = cleaned.indexOf('/')
+  const firstSegment = slash === -1 ? cleaned : cleaned.substring(0, slash)
+  if (firstSegment.includes('.') || firstSegment.includes(':')) {
+    return slash === -1 ? cleaned : cleaned.substring(slash + 1).replace(/^\/+/, '')
+  }
+  return cleaned
+}
+
 export function enabledItems(items: KeyValue[]): KeyValue[] {
   return items.filter((i) => i.enabled && i.key)
 }
