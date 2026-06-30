@@ -190,7 +190,6 @@ export function Navbar() {
                       onClick={() => {
                         setLang('zh')
                         showToast(tr('languageChanged'), 'info', undefined, 2000)
-                        ;(document.activeElement as HTMLElement)?.blur()
                       }}
                     >
                       <span>{tr('langZh')}</span>
@@ -208,7 +207,6 @@ export function Navbar() {
                       onClick={() => {
                         setLang('en')
                         showToast(tr('languageChanged'), 'info', undefined, 2000)
-                        ;(document.activeElement as HTMLElement)?.blur()
                       }}
                     >
                       <span>{tr('langEn')}</span>
@@ -277,11 +275,10 @@ export function Navbar() {
                             const all = await getAllEnvs()
                             setEnvs(all)
                             showToast(tr('envSwitched'), 'info')
-                            ;(document.activeElement as HTMLElement)?.blur()
-                          }}
+                                                      }}
                         >
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{env.name}</span>
-                          {env.isActive && <span style={{ fontSize: 10, color: 'var(--status-success)', fontWeight: 510, marginLeft: 4, flexShrink: 0 }}>&#9679;</span>}
+                          {env.isActive && <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--accent-brand)' }}>&#10003;</span>}
                         </button>
                       ))
                     )}
@@ -348,13 +345,12 @@ export function Navbar() {
                           onClick={() => {
                             setTheme(item.name)
                             showToast(tr('themeChanged'), 'info', undefined, 2000)
-                            ;(document.activeElement as HTMLElement)?.blur()
-                          }}
+                                                      }}
                         >
                           <span style={{ fontSize: 14 }}>{item.icon}</span>
                           <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
+                          {theme === item.name && <span style={{ marginRight: 4, fontSize: 13, color: 'var(--accent-brand)' }}>&#10003;</span>}
                           <span style={{ width: 12, height: 12, borderRadius: 3, background: item.preview, border: '1px solid var(--border-strong)' }} />
-                          {theme === item.name && <span style={{ marginLeft: 4, fontSize: 13, color: 'var(--accent-brand)' }}>&#10003;</span>}
                         </button>
                       ))}
                     </div>

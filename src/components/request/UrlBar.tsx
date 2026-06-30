@@ -201,14 +201,16 @@ export function UrlBar() {
             role="button"
             className="btn-ghost-linear flex items-center justify-center"
             style={{
-              width: isMobile ? 22 : 28,
+              width: isMobile ? 24 : 32,
+              paddingLeft: 0,
+              paddingRight: 0,
               border: '1px solid var(--border-subtle)',
               borderTopLeftRadius: 0,
               borderBottomLeftRadius: 0,
               borderLeft: 'none',
             }}
           >
-            {proxyExpanded ? <ChevronUp size={isMobile ? 12 : 15} /> : <ChevronDown size={isMobile ? 12 : 15} />}
+            {proxyExpanded ? <ChevronUp size={isMobile ? 12 : 14} /> : <ChevronDown size={isMobile ? 12 : 14} />}
           </button>
           <div
             tabIndex={0}
@@ -295,10 +297,12 @@ export function UrlBar() {
               borderTopLeftRadius: 0,
               borderBottomLeftRadius: 0,
               borderLeft: 'none',
-              width: isMobile ? 22 : 28,
+              width: isMobile ? 24 : 32,
+              paddingLeft: 0,
+              paddingRight: 0,
             }}
           >
-            <ChevronDown size={isMobile ? 12 : 15} />
+            <ChevronDown size={isMobile ? 12 : 14} />
           </button>
           <ul
             tabIndex={0}
